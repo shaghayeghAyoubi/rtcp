@@ -64,7 +64,7 @@ fun CameraListScreen(
                                 .padding(vertical = 8.dp)
                                 .clickable {
                                     selectedCameraId = camera.id
-                                    viewModel.fetchCameraStream(
+                                    viewModel.startWebRTC(
                                         cameraId = camera.id,
                                         uuid = camera.id
                                     )
@@ -103,7 +103,24 @@ fun CameraListScreen(
                 }
 
                 // Show video stream if available
-                state.streamUrl?.let { streamUrl ->
+//                state.streamUrl?.let { streamUrl ->
+//                    Box(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .height(220.dp)
+//                            .background(Color.Black)
+//                            .align(Alignment.BottomCenter),
+//                        contentAlignment = Alignment.Center
+//                    ) {
+//                        Text(
+//                            text = "Streaming Video for Camera ID: $selectedCameraId",
+//                            color = Color.White,
+//                            style = MaterialTheme.typography.titleMedium
+//                        )
+//                        // TODO: Replace with actual video player when ready
+//                    }
+//                }
+                state.streamUrl?.let {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -112,12 +129,7 @@ fun CameraListScreen(
                             .align(Alignment.BottomCenter),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "Streaming Video for Camera ID: $selectedCameraId",
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        // TODO: Replace with actual video player when ready
+                        WebRTCVideoView(viewModel = viewModel)
                     }
                 }
             }
