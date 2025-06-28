@@ -7,5 +7,6 @@ data class CameraListState(
     val isLoading: Boolean = true,
     val loadingStream: Boolean = false,
     val streamUrl: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    val streamError: String? = null // <-- NEW
 )
