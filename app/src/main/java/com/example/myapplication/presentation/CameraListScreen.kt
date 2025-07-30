@@ -13,9 +13,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.Color
+import androidx.navigation.NavController
 
 @Composable
 fun CameraListScreen(
+    navController: NavController,
     viewModel: CameraListViewModel = hiltViewModel()
 ) {
     val state = viewModel.state.collectAsState().value
@@ -64,10 +66,8 @@ fun CameraListScreen(
                                 .padding(vertical = 8.dp)
                                 .clickable {
                                     selectedCameraId = camera.id
-                                    viewModel.startWebRTC(
-                                        cameraId = camera.id,
-                                        uuid = camera.id
-                                    )
+                                    navController.navigate("messages")
+
                                 },
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                             colors = if (camera.id == selectedCameraId)
@@ -102,36 +102,7 @@ fun CameraListScreen(
                     }
                 }
 
-                // Show video stream if available
-//                state.streamUrl?.let { streamUrl ->
-//                    Box(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .height(220.dp)
-//                            .background(Color.Black)
-//                            .align(Alignment.BottomCenter),
-//                        contentAlignment = Alignment.Center
-//                    ) {
-//                        Text(
-//                            text = "Streaming Video for Camera ID: $selectedCameraId",
-//                            color = Color.White,
-//                            style = MaterialTheme.typography.titleMedium
-//                        )
-//                        // TODO: Replace with actual video player when ready
-//                    }
-//                }
-                state.streamUrl?.let {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(220.dp)
-                            .background(Color.Black)
-                            .align(Alignment.BottomCenter),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        WebRTCVideoView(viewModel = viewModel)
-                    }
-                }
+
             }
         }
     }

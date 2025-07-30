@@ -1,5 +1,6 @@
 plugins {
     kotlin("kapt")
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -79,6 +80,13 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-rtsp:1.2.0")
     implementation ("androidx.media3:media3-ui:1.2.0")
     implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.11")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
+    implementation("org.java-websocket:Java-WebSocket:1.5.2")
+    implementation("io.reactivex.rxjava2:rxjava:2.2.21")
+    implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     kapt(libs.dagger.hilt.compiler)
 }

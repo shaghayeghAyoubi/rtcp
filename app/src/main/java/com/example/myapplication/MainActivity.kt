@@ -15,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.presentation.CameraListScreen
+import com.example.myapplication.presentation.dashboard.WebSocketMessageScreen
 import com.example.myapplication.presentation.login.LoginScreen
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -26,21 +27,26 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
+            val navController = rememberNavController()
 
-                val navController = rememberNavController()
-                NavHost(
-                    navController = navController,
-                    startDestination = "login"
-                ) {
-                    composable("login") {
-                        LoginScreen(navController)
-                    }
-                    composable("camera_list") {
-                        CameraListScreen()
-                    }
-                    // Add other screens here
+            NavHost(
+                navController = navController,
+                startDestination = "login"
+            ) {
+                composable("login") {
+                    LoginScreen(navController)
+                }
+                composable("camera_list") {
+                    CameraListScreen(navController)
                 }
 
+                // ✅ New route for the WebSocket message screen
+                composable("messages") {
+                    WebSocketMessageScreen(navController)
+                }
+
+                // Add more screens here
+            }
         }
     }
 }
