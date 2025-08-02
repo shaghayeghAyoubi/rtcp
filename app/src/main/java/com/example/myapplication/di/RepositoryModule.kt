@@ -7,9 +7,11 @@ import com.example.myapplication.data.remote.api.SurveillanceApi
 import com.example.myapplication.data.repository.AuthRepositoryImpl
 import com.example.myapplication.data.repository.SurveillanceRepositoryImpl
 import com.example.myapplication.data.repository.TokenRepositoryImpl
+import com.example.myapplication.data.repository.WebRTCRepositoryImpl
 import com.example.myapplication.domain.repository.AuthRepository
 import com.example.myapplication.domain.repository.SurveillanceRepository
 import com.example.myapplication.domain.repository.TokenRepository
+import com.example.myapplication.domain.repository.WebRTCRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -37,6 +39,11 @@ abstract class RepositoryModule {
         impl: AuthRepositoryImpl
     ): AuthRepository
 
-
+    // ✅ Add this
+    @Binds
+    @Singleton
+    abstract fun bindWebRTCRepository(
+        impl: WebRTCRepositoryImpl
+    ): WebRTCRepository
 }
 

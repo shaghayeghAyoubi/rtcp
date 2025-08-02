@@ -4,7 +4,10 @@ import com.example.myapplication.data.remote.api.AuthApi
 
 
 import com.example.myapplication.data.remote.api.SurveillanceApi
+import com.example.myapplication.data.remote.api.SignalingApi
+import com.example.myapplication.data.remote.api.SignalingApiImpl
 import com.example.myapplication.data.remote.network.TokenInterceptor
+import com.example.myapplication.data.repository.WebRTCRepositoryImpl
 import com.example.myapplication.utils.UnsafeOkHttpClient
 import dagger.Module
 import dagger.Provides
@@ -15,7 +18,6 @@ import okhttp3.logging.HttpLoggingInterceptor
 
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import javax.inject.Named
 import javax.inject.Singleton
 
 
@@ -93,5 +95,10 @@ object NetworkModule {
         return retrofit.create(AuthApi::class.java)
     }
 
-
+    // ✅ Add this for signaling API (WebRTC)
+    @Provides
+    @Singleton
+    fun provideSignalingApi(okHttpClient: OkHttpClient): SignalingApi {
+        return SignalingApiImpl(okHttpClient)
+    }
 }

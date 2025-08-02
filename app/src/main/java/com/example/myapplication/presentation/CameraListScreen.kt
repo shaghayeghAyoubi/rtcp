@@ -13,7 +13,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import com.example.myapplication.presentation.webrtc.WebRTCVideoViewModel
+import org.webrtc.EglBase
+import org.webrtc.SurfaceViewRenderer
+
 
 @Composable
 fun CameraListScreen(
@@ -87,6 +94,10 @@ fun CameraListScreen(
                                 )
                             }
                         }
+                        WebRTCVideoScreen(
+                            id = camera.id,
+                            channel = 1 // اگر کانال مشخصه، این رو درست بده
+                        )
                     }
                 }
 
@@ -104,6 +115,39 @@ fun CameraListScreen(
 
 
             }
+        }
+    }
+}
+
+@Composable
+fun WebRTCVideoScreen(
+    id: Int,
+    channel: Int,
+    viewModel: WebRTCVideoViewModel = hiltViewModel()
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    var surfaceRenderer: SurfaceViewRenderer? = remember { null }
+
+    AndroidView(
+        factory = {
+            SurfaceViewRenderer(context).apply {
+                init(
+                    EglBase.create().eglBaseContext,
+                    null
+                )
+                surfaceRenderer = this
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp)
+    )
+
+    LaunchedEffect(Unit) {
+        surfaceRenderer?.let {
+            viewModel.startStreaming(id, channel, it)
         }
     }
 }
