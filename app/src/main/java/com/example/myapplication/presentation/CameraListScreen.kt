@@ -17,9 +17,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+//import com.example.myapplication.data.webrtc.WebRTCClient
 import com.example.myapplication.presentation.webrtc.WebRTCVideoViewModel
 import org.webrtc.EglBase
+import org.webrtc.RendererCommon
 import org.webrtc.SurfaceViewRenderer
+import org.webrtc.DataChannel
+import org.webrtc.IceCandidate
+import org.webrtc.MediaStream
+import org.webrtc.PeerConnection
+import org.webrtc.PeerConnectionFactory
+import org.webrtc.RtpTransceiver
 
 
 @Composable
@@ -119,35 +127,8 @@ fun CameraListScreen(
     }
 }
 
+
 @Composable
-fun WebRTCVideoScreen(
-    id: Int,
-    channel: Int,
-    viewModel: WebRTCVideoViewModel = hiltViewModel()
-) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+fun WebRTCVideoScreen(id: Int, channel: Int) {
 
-    var surfaceRenderer: SurfaceViewRenderer? = remember { null }
-
-    AndroidView(
-        factory = {
-            SurfaceViewRenderer(context).apply {
-                init(
-                    EglBase.create().eglBaseContext,
-                    null
-                )
-                surfaceRenderer = this
-            }
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-    )
-
-    LaunchedEffect(Unit) {
-        surfaceRenderer?.let {
-            viewModel.startStreaming(id, channel, it)
-        }
-    }
 }

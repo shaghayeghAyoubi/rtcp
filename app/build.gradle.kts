@@ -71,7 +71,7 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.compose.shimmer)
     implementation(libs.accompanist.navigation.animation)
-    implementation("com.dafruits:webrtc:123.0.0")
+
     implementation ("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("androidx.compose.material:material-icons-extended:1.6.1")
     implementation("androidx.datastore:datastore-preferences:1.0.0")
@@ -81,12 +81,18 @@ dependencies {
     implementation ("androidx.media3:media3-ui:1.2.0")
     implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.11")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-
     implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
     implementation("org.java-websocket:Java-WebSocket:1.5.2")
     implementation("io.reactivex.rxjava2:rxjava:2.2.21")
     implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
-
+    implementation("io.ktor:ktor-client-core:2.3.2")
+    implementation("io.ktor:ktor-client-cio:2.3.2")
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.2")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.2")
+    implementation("io.ktor:ktor-client-okhttp:2.3.4")
+    implementation("io.getstream:stream-webrtc-android:1.3.8")
+    implementation ("io.getstream:stream-webrtc-android-ui-compose:1.3.8")
+    implementation ("org.webrtc:google-webrtc:1.0.32006")
     kapt(libs.dagger.hilt.compiler)
 }

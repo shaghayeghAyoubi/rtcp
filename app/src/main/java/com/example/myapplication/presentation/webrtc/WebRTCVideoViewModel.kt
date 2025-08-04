@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.usecase.StartWebRTCStreamingUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import org.webrtc.EglBase
 import org.webrtc.SurfaceViewRenderer
 import javax.inject.Inject
 
@@ -20,11 +21,11 @@ class WebRTCVideoViewModel @Inject constructor(
     private val _isStreaming = MutableLiveData(false)
     val isStreaming: LiveData<Boolean> = _isStreaming
 
-    fun startStreaming(id: Int, channel: Int, renderer: SurfaceViewRenderer) {
+    fun startStreaming(id: Int, channel: Int, renderer: SurfaceViewRenderer, eglBaseContext: EglBase.Context ) {
         viewModelScope.launch {
             try {
                 _isStreaming.value = true
-                startWebRTCStreamingUseCase(id, channel, renderer)
+                startWebRTCStreamingUseCase(id, channel, renderer, eglBaseContext)
             } catch (e: Exception) {
                 Log.e("WebRTCViewModel", "Streaming error: ${e.message}")
                 _isStreaming.value = false
