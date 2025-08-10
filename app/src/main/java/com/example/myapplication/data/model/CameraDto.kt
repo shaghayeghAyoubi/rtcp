@@ -1,5 +1,14 @@
 package com.example.myapplication.data.model
 
+import com.google.gson.annotations.SerializedName
+
+data class CameraListResponseDto(
+    @SerializedName("content")
+    val data: List<CameraDto>,
+
+    @SerializedName("totalElements")
+    val totalCount: Int
+)
 data class CameraDto(
     val id: Int,
     val title: String,

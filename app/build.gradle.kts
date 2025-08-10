@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.coil)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.runtime.livedata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -91,8 +92,7 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:2.3.2")
     implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.2")
     implementation("io.ktor:ktor-client-okhttp:2.3.4")
-    implementation("io.getstream:stream-webrtc-android:1.3.8")
-    implementation ("io.getstream:stream-webrtc-android-ui-compose:1.3.8")
-    implementation ("org.webrtc:google-webrtc:1.0.32006")
+    implementation("com.dafruits:webrtc:123.0.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     kapt(libs.dagger.hilt.compiler)
 }

@@ -15,7 +15,7 @@ fun CameraDto.toDomain(): Camera {
         status = status,
         isActive = activation,
         thumbnail = thumbnail,
-        cameraGroups = cameraGroups.map { it.toDomain() },
+        cameraGroups = cameraGroups?.map { it.toDomain() } ?: emptyList(),
         pinned = pinned
     )
 }
