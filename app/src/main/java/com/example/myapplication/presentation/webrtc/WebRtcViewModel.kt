@@ -55,7 +55,6 @@ class WebRtcViewModel @Inject constructor(
     private var peerConnection: PeerConnection? = null
 
     init {
-        // Initialize PeerConnectionFactory
         val options = PeerConnectionFactory.Options()
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions.builder(context).createInitializationOptions()
@@ -68,63 +67,6 @@ class WebRtcViewModel @Inject constructor(
             .setVideoDecoderFactory(decoderFactory)
             .createPeerConnectionFactory()
     }
-
-    /** Establishes the WebRTC connection: creates offer, sends it, and sets the answer. */
-//    fun connectWebRtc(id: Int, channel: Int) {
-//        // 1. Create PeerConnection with STUN servers
-//        val iceServers = listOf(
-//            PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer(),
-//            PeerConnection.IceServer.builder("stun:stun2.l.google.com:19302").createIceServer()
-//        )
-//        val rtcConfig = PeerConnection.RTCConfiguration(iceServers)
-//        peerConnection = peerConnectionFactory.createPeerConnection(rtcConfig, this)
-//
-//        // 2. Add a video transceiver (receive-only)
-//        peerConnection?.addTransceiver(
-//            MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO,
-//            RtpTransceiver.RtpTransceiverInit(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)
-//        )
-//
-//        // 3. Create SDP offer
-//        peerConnection?.createOffer(object : SdpObserver {
-//            override fun onCreateSuccess(offer: SessionDescription) {
-//                peerConnection?.setLocalDescription(object : SdpObserver {
-//                    override fun onSetSuccess() {
-//                        // 4. After setting local desc, send SDP to server
-//                        val url = "https://172.15.0.60:8443/stream/$id/channel/$channel/webrtc?uuid=$id&channel=$channel"
-//                        val data = Base64.encodeToString(offer.description.toByteArray(), Base64.NO_WRAP)
-//                        val requestBody = RequestBody.create(
-//                            "application/x-www-form-urlencoded; charset=UTF-8".toMediaTypeOrNull(),
-//                            "data=$data"
-//                        )
-//                        val request = Request.Builder().url(url).post(requestBody).build()
-//                        // Perform network call in IO
-//                        viewModelScope.launch(Dispatchers.IO) {
-//                            okHttpClient.newCall(request).execute().use { resp ->
-//                                val answerBase64 = resp.body?.string() ?: ""
-//                                val answerSdp = String(Base64.decode(answerBase64, Base64.DEFAULT))
-//                                // Set remote description on main thread
-//                                withContext(Dispatchers.Main) {
-//                                    peerConnection?.setRemoteDescription(object : SdpObserver {
-//                                        override fun onSetSuccess() { /* Remote SDP set */ }
-//                                        override fun onSetFailure(error: String) { /* handle error */ }
-//                                        override fun onCreateSuccess(desc: SessionDescription) {}
-//                                        override fun onCreateFailure(err: String) {}
-//                                    }, SessionDescription(SessionDescription.Type.ANSWER, answerSdp))
-//                                }
-//                            }
-//                        }
-//                    }
-//                    override fun onSetFailure(e: String) {}
-//                    override fun onCreateSuccess(desc: SessionDescription) {}
-//                    override fun onCreateFailure(err: String) {}
-//                }, offer)
-//            }
-//            override fun onCreateFailure(err: String) {}
-//            override fun onSetSuccess() {}
-//            override fun onSetFailure(err: String) {}
-//        }, MediaConstraints())
-//    }
 
     fun connectWebRtc(id: Int, channel: Int) {
         val iceServers = listOf(
@@ -182,7 +124,7 @@ class WebRtcViewModel @Inject constructor(
         }, constraints)
     }
 
-    /** PeerConnection.Observer callbacks **/
+    // PeerConnection.Observer callbacks
     override fun onAddStream(stream: MediaStream) {}
     override fun onDataChannel(dc: DataChannel) {}
     override fun onIceConnectionReceivingChange(receiving: Boolean) {}
@@ -196,20 +138,21 @@ class WebRtcViewModel @Inject constructor(
     override fun onStandardizedIceConnectionChange(newState: PeerConnection.IceConnectionState) {}
     override fun onConnectionChange(newState: PeerConnection.PeerConnectionState) {}
 
-    // Called when a new track (audio/video) arrives
     override fun onAddTrack(receiver: RtpReceiver, mediaStreams: Array<MediaStream>) {
         val track = receiver.track()
         if (track is VideoTrack) {
-            // When video track arrives, keep it and notify UI
             _remoteVideoTrack.postValue(track)
         }
     }
 
     override fun onTrack(transceiver: RtpTransceiver) {
-        // Alternatively, handle onTrack if using Unified Plan
-        Log.d("WebRTC", "onTrack: ${transceiver.receiver.track()?.id()}")
         transceiver.receiver.track()?.let { track ->
             if (track is VideoTrack) _remoteVideoTrack.postValue(track)
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        peerConnection?.close()
     }
 }

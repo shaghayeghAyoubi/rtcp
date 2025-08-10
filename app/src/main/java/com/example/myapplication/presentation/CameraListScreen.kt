@@ -143,31 +143,67 @@ fun CameraListScreen(
 }
 
 
+//@Composable
+//fun WebRtcVideoScreen(
+//    id: Int,
+//    channel: Int,
+//    modifier: Modifier = Modifier, // ✅ allow height/width to be passed
+//    viewModel: WebRtcViewModel = hiltViewModel()
+//) {
+//    val videoTrack by viewModel.remoteVideoTrack.observeAsState()
+//    // Launch connection once
+//    LaunchedEffect(Unit) {
+//        viewModel.connectWebRtc(id = id, channel = channel)
+//    }
+//    // Display a SurfaceViewRenderer for the video
+//    Box(modifier = Modifier.fillMaxSize()) {
+//        videoTrack?.let { track ->
+//            AndroidView(factory = { context ->
+//                SurfaceViewRenderer(context).apply {
+//                    init(viewModel.eglBase.eglBaseContext, null)
+//                    setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+//                    setZOrderMediaOverlay(true)
+//                }
+//            }, update = { renderer ->
+//                // Attach the remote video track to the renderer
+//                track.addSink(renderer)
+//            }, modifier = modifier.fillMaxSize()
+//            )
+//        }
+//    }
+//}
 @Composable
 fun WebRtcVideoScreen(
     id: Int,
     channel: Int,
-    modifier: Modifier = Modifier, // ✅ allow height/width to be passed
-    viewModel: WebRtcViewModel = hiltViewModel()
+    modifier: Modifier = Modifier,
+    viewModel: WebRtcViewModel = hiltViewModel(key = "$id-$channel")
 ) {
     val videoTrack by viewModel.remoteVideoTrack.observeAsState()
-    // Launch connection once
+
     LaunchedEffect(Unit) {
         viewModel.connectWebRtc(id = id, channel = channel)
     }
-    // Display a SurfaceViewRenderer for the video
-    Box(modifier = Modifier.fillMaxSize()) {
-        videoTrack?.let { track ->
-            AndroidView(factory = { context ->
-                SurfaceViewRenderer(context).apply {
-                    init(viewModel.eglBase.eglBaseContext, null)
-                    setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
-                    setZOrderMediaOverlay(true)
-                }
-            }, update = { renderer ->
-                // Attach the remote video track to the renderer
-                track.addSink(renderer)
-            }, modifier = modifier.fillMaxSize()
+
+    Box(modifier = modifier) {
+        if (videoTrack != null) {
+            AndroidView(
+                factory = { context ->
+                    SurfaceViewRenderer(context).apply {
+                        init(viewModel.eglBase.eglBaseContext, null)
+                        setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+                        setZOrderMediaOverlay(true)
+                    }
+                },
+                update = { renderer ->
+                    videoTrack?.addSink(renderer)
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Text(
+                text = "Connecting to camera $id...",
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }
