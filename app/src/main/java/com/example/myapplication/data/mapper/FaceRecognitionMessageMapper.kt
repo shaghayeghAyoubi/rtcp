@@ -6,6 +6,7 @@ import com.example.myapplication.domain.model.FaceRecognitionMessage
 
 fun FaceRecognitionMessageDto.toDomain():  FaceRecognitionMessage = FaceRecognitionMessage(
     message = message,
+    cameraTitle = cameraTitle,
     createdDate = createdDate,
     croppedFace = croppedFace,
     nearestNeighbourBiometricId = nearestNeighbourBiometricId,

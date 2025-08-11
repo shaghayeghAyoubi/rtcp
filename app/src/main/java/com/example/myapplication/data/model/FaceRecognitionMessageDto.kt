@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class FaceRecognitionMessageDto(
     val message: String,
+    val cameraTitle : String,
     val createdDate: String,
     val croppedFace: String,
     val nearestNeighbourBiometricId: String?,

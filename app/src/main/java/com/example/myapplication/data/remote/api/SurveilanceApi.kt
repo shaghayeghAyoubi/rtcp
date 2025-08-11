@@ -2,7 +2,6 @@ package com.example.myapplication.data.remote.api
 
 import com.example.myapplication.data.model.CameraDto
 import com.example.myapplication.data.model.CameraListResponseDto
-import com.example.myapplication.data.model.StreamResponseDto
 import retrofit2.http.GET
 import retrofit2.Response
 import okhttp3.ResponseBody

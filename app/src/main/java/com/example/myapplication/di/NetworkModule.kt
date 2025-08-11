@@ -4,10 +4,7 @@ import com.example.myapplication.data.remote.api.AuthApi
 
 
 import com.example.myapplication.data.remote.api.SurveillanceApi
-import com.example.myapplication.data.remote.api.SignalingApi
-import com.example.myapplication.data.remote.api.SignalingApiImpl
 import com.example.myapplication.data.remote.network.TokenInterceptor
-import com.example.myapplication.data.repository.WebRTCRepositoryImpl
 import com.example.myapplication.utils.UnsafeOkHttpClient
 import dagger.Module
 import dagger.Provides
@@ -95,10 +92,5 @@ object NetworkModule {
         return retrofit.create(AuthApi::class.java)
     }
 
-    // ✅ Add this for signaling API (WebRTC)
-    @Provides
-    @Singleton
-    fun provideSignalingApi(okHttpClient: OkHttpClient): SignalingApi {
-        return SignalingApiImpl(okHttpClient)
-    }
+
 }

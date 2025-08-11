@@ -6,7 +6,6 @@ import com.example.myapplication.data.model.CameraListResponseDto
 
 import com.example.myapplication.data.remote.api.SurveillanceApi
 import com.example.myapplication.domain.model.Camera
-import com.example.myapplication.domain.model.StreamResponse
 import com.example.myapplication.domain.repository.SurveillanceRepository
 import com.google.gson.Gson
 import javax.inject.Inject
