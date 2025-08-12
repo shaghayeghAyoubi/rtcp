@@ -34,7 +34,7 @@ public class PushNotificationService extends Service {
         public void handleMessage(Message msg) {
             try {
                 Thread.sleep(15000);
-                Toast.makeText(getApplicationContext(), "StartAgain - Hamzeh", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "StartAgain - shaghayegh", Toast.LENGTH_SHORT).show();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -74,7 +74,19 @@ public class PushNotificationService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Toast.makeText(this, "Start Services - Hamzeh", Toast.LENGTH_SHORT).show();
+        String msgText = intent.getStringExtra("msg");
+        if (msgText != null) {
+            // Show toast
+            Toast.makeText(this, msgText, Toast.LENGTH_LONG).show();
+
+            // Update notification
+            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setContentTitle("Alert")
+                    .setContentText(msgText)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .build();
+            startForeground(1, notification);
+        }
 
         Message msg = serviceHandler.obtainMessage();
         msg.arg1 = startId;

@@ -12,4 +12,5 @@ data class FaceRecognitionMessage(
     val nearestNeighbourBiometricId: String?,
     val nearestNeighbourId: String?,
     val nearestNeighbourSimilarity: Double?,
+
 )

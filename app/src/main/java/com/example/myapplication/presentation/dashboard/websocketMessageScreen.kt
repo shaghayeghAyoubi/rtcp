@@ -20,12 +20,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.navigation.NavController
+import android.content.Intent
+import android.os.Build
+import androidx.compose.ui.platform.LocalContext
+import com.example.myapplication.PushNotificationService
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WebSocketMessageScreen(navController: NavController, viewModel: WebSocketViewModel = viewModel()) {
     val messages by viewModel.messages.collectAsState()
-
+    val context = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Live Messages") } ,   navigationIcon = {
@@ -52,6 +58,21 @@ fun WebSocketMessageScreen(navController: NavController, viewModel: WebSocketVie
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(messages) { message ->
+
+                        if (message.message == "forbidden") {
+                            // Show toast in UI thread
+
+
+                            // Start PushNotificationService with message
+                            val serviceIntent = Intent(context, PushNotificationService::class.java)
+                                .putExtra("msg", "⚠ Forbidden message received!")
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                context.startForegroundService(serviceIntent)
+                            } else {
+                                context.startService(serviceIntent)
+                            }
+                        }
+
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(4.dp)
