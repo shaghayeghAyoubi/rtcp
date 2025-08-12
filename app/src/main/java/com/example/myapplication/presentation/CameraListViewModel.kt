@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.usecase.GetCameraListUseCase
+import com.example.myapplication.domain.usecase.GetRecognizedPeopleUseCase
 
 
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,11 +28,15 @@ import javax.net.ssl.*
 @HiltViewModel
 class CameraListViewModel @Inject constructor(
     private val getCameraListUseCase: GetCameraListUseCase,
+    private val getRecognizedPeopleUseCase: GetRecognizedPeopleUseCase,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(CameraListState())
     val state: StateFlow<CameraListState> = _state
+
+    private val _recognizedPeopleState = MutableStateFlow(RecognizedPeopleState())
+    val recognizedPeopleState: StateFlow<RecognizedPeopleState> = _recognizedPeopleState
 
 
 
@@ -41,6 +46,7 @@ class CameraListViewModel @Inject constructor(
 
 
         fetchCameras()
+        fetchRecognizedPeople()
     }
 
     private fun fetchCameras() {
@@ -51,6 +57,21 @@ class CameraListViewModel @Inject constructor(
                 _state.value = _state.value.copy(cameras = cameras, isLoading = false)
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, error = e.message ?: "Unknown error")
+            }
+        }
+    }
+    private fun fetchRecognizedPeople() {
+        viewModelScope.launch {
+            _recognizedPeopleState.value = _recognizedPeopleState.value.copy(isLoading = true, error = null)
+            try {
+                val recognizedPeople = getRecognizedPeopleUseCase(
+                    pageNumber = 0,
+                    pageSize = 10,
+                    sort = "recognizedDate,desc"
+                )
+                _recognizedPeopleState.value = _recognizedPeopleState.value.copy(recognizedPeople = recognizedPeople, isLoading = false)
+            } catch (e: Exception) {
+                _recognizedPeopleState.value = _recognizedPeopleState.value.copy(isLoading = false, error = e.message ?: "Unknown error")
             }
         }
     }
