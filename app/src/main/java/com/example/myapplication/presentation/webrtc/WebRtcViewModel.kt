@@ -38,7 +38,9 @@ import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 
-
+enum class WebRtcStatus {
+    LOADING, CONNECTED, ERROR
+}
 
 
 @HiltViewModel
@@ -49,6 +51,9 @@ class WebRtcViewModel @Inject constructor(
 
     private val _remoteVideoTrack = MutableLiveData<VideoTrack?>()
     val remoteVideoTrack: LiveData<VideoTrack?> = _remoteVideoTrack
+
+    private val _status = MutableLiveData<WebRtcStatus>()
+    val status: LiveData<WebRtcStatus> = _status
 
     val eglBase = EglBase.create()
     private val peerConnectionFactory: PeerConnectionFactory
@@ -69,6 +74,7 @@ class WebRtcViewModel @Inject constructor(
     }
 
     fun connectWebRtc(id: Int, channel: Int) {
+        _status.postValue(WebRtcStatus.LOADING)
         val iceServers = listOf(
             PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer(),
             PeerConnection.IceServer.builder("stun:stun2.l.google.com:19302").createIceServer()
@@ -99,26 +105,46 @@ class WebRtcViewModel @Inject constructor(
                         val request = Request.Builder().url(url).post(requestBody).build()
 
                         viewModelScope.launch(Dispatchers.IO) {
-                            okHttpClient.newCall(request).execute().use { resp ->
-                                val answerBase64 = resp.body?.string() ?: ""
-                                val answerSdp = String(Base64.decode(answerBase64, Base64.DEFAULT))
-                                withContext(Dispatchers.Main) {
-                                    peerConnection?.setRemoteDescription(object : SdpObserver {
-                                        override fun onSetSuccess() {}
-                                        override fun onSetFailure(error: String) {}
-                                        override fun onCreateSuccess(desc: SessionDescription) {}
-                                        override fun onCreateFailure(err: String) {}
-                                    }, SessionDescription(SessionDescription.Type.ANSWER, answerSdp))
+                            try {
+                                okHttpClient.newCall(request).execute().use { resp ->
+                                    val answerBase64 = resp.body?.string() ?: ""
+                                    val answerSdp =
+                                        String(Base64.decode(answerBase64, Base64.DEFAULT))
+                                    withContext(Dispatchers.Main) {
+                                        peerConnection?.setRemoteDescription(
+                                            object : SdpObserver {
+                                                override fun onSetSuccess() {
+                                                    _status.postValue(WebRtcStatus.CONNECTED)
+                                                }
+                                                override fun onSetFailure(error: String) {
+                                                    _status.postValue(WebRtcStatus.ERROR)
+                                                }
+                                                override fun onCreateSuccess(desc: SessionDescription) {}
+                                                override fun onCreateFailure(err: String) {}
+                                            },
+                                            SessionDescription(
+                                                SessionDescription.Type.ANSWER,
+                                                answerSdp
+                                            )
+                                        )
+                                    }
                                 }
+                            } catch (e : Exception) {
+                                _status.postValue(WebRtcStatus.ERROR)
                             }
                         }
                     }
-                    override fun onSetFailure(e: String) {}
+                    override fun onSetFailure(e: String) {
+                        _status.postValue(WebRtcStatus.ERROR)
+                    }
+
                     override fun onCreateSuccess(desc: SessionDescription) {}
-                    override fun onCreateFailure(err: String) {}
+                    override fun onCreateFailure(err: String)  {}
                 }, offer)
             }
-            override fun onCreateFailure(err: String) {}
+            override fun onCreateFailure(err: String) {
+                _status.postValue(WebRtcStatus.ERROR)
+            }
             override fun onSetSuccess() {}
             override fun onSetFailure(err: String) {}
         }, constraints)

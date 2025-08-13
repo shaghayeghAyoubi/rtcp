@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.myapplication.domain.model.RecognizedPerson
+import com.example.myapplication.presentation.webrtc.WebRtcStatus
 import com.example.myapplication.presentation.webrtc.WebRtcViewModel
 
 
@@ -233,31 +234,38 @@ fun WebRtcVideoScreen(
     viewModel: WebRtcViewModel = hiltViewModel(key = "$id-$channel")
 ) {
     val videoTrack by viewModel.remoteVideoTrack.observeAsState()
-
+    val status by viewModel.status.observeAsState(WebRtcStatus.LOADING)
     LaunchedEffect(Unit) {
         viewModel.connectWebRtc(id = id, channel = channel)
     }
 
-    Box(modifier = modifier) {
-        if (videoTrack != null) {
-            AndroidView(
-                factory = { context ->
-                    SurfaceViewRenderer(context).apply {
-                        init(viewModel.eglBase.eglBaseContext, null)
-                        setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
-                        setZOrderMediaOverlay(true)
-                    }
-                },
-                update = { renderer ->
-                    videoTrack?.addSink(renderer)
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        } else {
-            Text(
-                text = "Connecting to camera $id...",
-                modifier = Modifier.align(Alignment.Center)
-            )
+    Box(modifier = modifier.fillMaxSize()) {
+        when (status) {
+            WebRtcStatus.LOADING -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+            WebRtcStatus.ERROR -> {
+                Text(
+                    text = "Failed to connect to camera $id",
+                    color = Color.Red,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            WebRtcStatus.CONNECTED -> {
+                videoTrack?.let { track ->
+                    AndroidView(
+                        factory = { context ->
+                            SurfaceViewRenderer(context).apply {
+                                init(viewModel.eglBase.eglBaseContext, null)
+                                setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+                                setZOrderMediaOverlay(true)
+                            }
+                        },
+                        update = { renderer -> track.addSink(renderer) },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
         }
     }
 }

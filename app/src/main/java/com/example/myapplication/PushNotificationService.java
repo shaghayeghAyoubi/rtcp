@@ -86,6 +86,8 @@ public class PushNotificationService extends Service {
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .build();
             startForeground(1, notification);
+        } else {
+            Toast.makeText(this, "Start Services - shaghayegh", Toast.LENGTH_SHORT).show();
         }
 
         Message msg = serviceHandler.obtainMessage();
