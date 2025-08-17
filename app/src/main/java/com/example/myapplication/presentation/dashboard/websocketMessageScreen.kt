@@ -29,7 +29,7 @@ import com.example.myapplication.PushNotificationService
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WebSocketMessageScreen(navController: NavController, viewModel: WebSocketViewModel = viewModel()) {
+fun WebSocketMessageScreen(navController: NavController, viewModel: WebSocketViewModel) {
     val messages by viewModel.messages.collectAsState()
     val context = LocalContext.current
     Scaffold(
@@ -59,7 +59,7 @@ fun WebSocketMessageScreen(navController: NavController, viewModel: WebSocketVie
                 ) {
                     items(messages) { message ->
 
-                        if (message.message == "forbidden") {
+                        if (message.message == "OK") {
                             // Show toast in UI thread
 
 

@@ -1,10 +1,16 @@
 package com.example.myapplication.presentation.dashboard
 
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.example.myapplication.PushNotificationService
 import com.example.myapplication.data.mapper.toDomain
 import com.example.myapplication.data.model.FaceRecognitionMessageDto
 import com.example.myapplication.domain.model.FaceRecognitionMessage
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -17,8 +23,10 @@ import kotlinx.serialization.json.Json
 import ua.naiksoftware.stomp.Stomp
 import ua.naiksoftware.stomp.StompClient
 import ua.naiksoftware.stomp.dto.LifecycleEvent
+import javax.inject.Inject
 
-class WebSocketViewModel : ViewModel() {
+@HiltViewModel
+class WebSocketViewModel @Inject constructor(@ApplicationContext private val context: Context) : ViewModel() {
 
     private val stompClient: StompClient = Stomp.over(
         Stomp.ConnectionProvider.OKHTTP,
@@ -73,6 +81,9 @@ class WebSocketViewModel : ViewModel() {
                         val dto = Json.decodeFromString<FaceRecognitionMessageDto>(message.payload)
                         val domainMessage = dto.toDomain()
                         _messages.update { it + domainMessage }
+                        if (domainMessage.message == "OK") {
+                            showForbiddenNotification()
+                        }
                     } catch (e: Exception) {
                         Log.e("WebSocket", "⚠️ Failed to parse message", e)
                     }
@@ -80,6 +91,17 @@ class WebSocketViewModel : ViewModel() {
                     Log.e("WebSocket", "❌ Subscription error", error)
                 })
         )
+    }
+
+
+    private fun showForbiddenNotification() {
+        val serviceIntent = Intent(context, PushNotificationService::class.java)
+            .putExtra("msg", "⚠ Forbidden message received!")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(serviceIntent)
+        } else {
+            context.startService(serviceIntent)
+        }
     }
 
     override fun onCleared() {
