@@ -135,4 +135,3 @@ public class PushNotificationService extends Service {
         Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show();
     }
 }
-
