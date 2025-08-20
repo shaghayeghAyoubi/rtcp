@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myapplication.WebSocketManager
 import com.example.myapplication.domain.model.LoginRequest
 import com.example.myapplication.domain.model.LoginResponse
 import com.example.myapplication.domain.usecase.LoginUseCase
@@ -35,7 +36,8 @@ import javax.inject.Inject
 //}
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val loginUseCase: LoginUseCase
+    private val loginUseCase: LoginUseCase,
+    private val webSocketManager: WebSocketManager
 ) : ViewModel() {
 
     var username by mutableStateOf("")
@@ -52,6 +54,9 @@ class LoginViewModel @Inject constructor(
             val result = loginUseCase(request)
             loginState = result.fold(
                 onSuccess = {
+                    viewModelScope.launch {
+                        webSocketManager.connect()
+                    }
                     _navigateToCameraList.emit(Unit)
                     LoginState.Success(it)
                             },

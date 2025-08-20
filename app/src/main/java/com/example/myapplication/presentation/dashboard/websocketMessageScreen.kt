@@ -23,25 +23,27 @@ import androidx.navigation.NavController
 import android.content.Intent
 import android.os.Build
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.PushNotificationService
-
+import com.example.myapplication.WebSocketManager
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WebSocketMessageScreen(navController: NavController, viewModel: WebSocketViewModel) {
-    val messages by viewModel.messages.collectAsState()
+fun WebSocketMessageScreen(navController: NavController, webSocketManager: WebSocketManager) {
+    val messages by webSocketManager.messages.collectAsState()
     val context = LocalContext.current
+
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text("Live Messages") } ,   navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back"
-                    )
+            TopAppBar(
+                title = { Text("Live Messages") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
                 }
-            })
+            )
         }
     ) { paddingValues ->
         Column(
@@ -60,16 +62,14 @@ fun WebSocketMessageScreen(navController: NavController, viewModel: WebSocketVie
                     items(messages) { message ->
 
                         if (message.message == "OK") {
-                            // Show toast in UI thread
-
-
-                            // Start PushNotificationService with message
-                            val serviceIntent = Intent(context, PushNotificationService::class.java)
-                                .putExtra("msg", "⚠ Forbidden message received!")
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                context.startForegroundService(serviceIntent)
-                            } else {
-                                context.startService(serviceIntent)
+                            LaunchedEffect(message) {
+                                val intent = Intent(context, PushNotificationService::class.java)
+                                    .putExtra("msg", "⚠ Forbidden message received!")
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    context.startForegroundService(intent)
+                                } else {
+                                    context.startService(intent)
+                                }
                             }
                         }
 
@@ -78,13 +78,11 @@ fun WebSocketMessageScreen(navController: NavController, viewModel: WebSocketVie
                             elevation = CardDefaults.cardElevation(4.dp)
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
-
                                 Text("🕒 Time: ${message.createdDate}", style = MaterialTheme.typography.bodySmall)
                                 Text("💬 Message: ${message.message}", style = MaterialTheme.typography.bodyMedium)
                                 message.nearestNeighbourSimilarity?.let {
                                     Text("🔍 Similarity: $it%", style = MaterialTheme.typography.bodySmall)
                                 }
-
                                 message.croppedFace?.let { base64 ->
                                     base64ToBitmap(base64)?.let { bitmap ->
                                         Image(

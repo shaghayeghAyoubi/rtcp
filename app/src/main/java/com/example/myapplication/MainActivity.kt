@@ -20,34 +20,36 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.presentation.CameraListScreen
 import com.example.myapplication.presentation.dashboard.WebSocketMessageScreen
-import com.example.myapplication.presentation.dashboard.WebSocketViewModel
+
 import com.example.myapplication.presentation.login.LoginScreen
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var webSocketManager: WebSocketManager
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
-
         setContent {
-            val webSocketViewModel: WebSocketViewModel = hiltViewModel()
             val navController = rememberNavController()
-
             NavHost(
                 navController = navController,
                 startDestination = "login"
             ) {
-
                 composable("login") { LoginScreen(navController) }
                 composable("camera_list") { CameraListScreen(navController) }
-                composable("messages") { WebSocketMessageScreen(navController, webSocketViewModel) }
-                // Add more screens here
+                composable("messages") { WebSocketMessageScreen(navController, webSocketManager) }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        webSocketManager.disconnect()
     }
 }
