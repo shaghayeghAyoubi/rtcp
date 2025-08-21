@@ -2,7 +2,6 @@ package com.example.myapplication.presentation
 
 
 
-import com.example.myapplication.PushNotificationService
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -37,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
+import com.example.myapplication.PushNotificationService
 import com.example.myapplication.domain.model.RecognizedPerson
 import com.example.myapplication.presentation.webrtc.WebRtcStatus
 import com.example.myapplication.presentation.webrtc.WebRtcViewModel
