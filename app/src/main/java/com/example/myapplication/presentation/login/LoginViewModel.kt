@@ -37,15 +37,16 @@ import javax.inject.Inject
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
-    private val webSocketManager: WebSocketManager
 ) : ViewModel() {
 
     var username by mutableStateOf("")
     var password by mutableStateOf("")
     var loginState by mutableStateOf<LoginState>(LoginState.Idle)
         private set
+
     private val _navigateToCameraList = MutableSharedFlow<Unit>()
     val navigateToCameraList = _navigateToCameraList.asSharedFlow()
+
     fun login() {
         val request = LoginRequest(username = username, password = password)
 
@@ -54,12 +55,9 @@ class LoginViewModel @Inject constructor(
             val result = loginUseCase(request)
             loginState = result.fold(
                 onSuccess = {
-                    viewModelScope.launch {
-                        webSocketManager.connect()
-                    }
-                    _navigateToCameraList.emit(Unit)
+                    _navigateToCameraList.emit(Unit)  // just navigate
                     LoginState.Success(it)
-                            },
+                },
                 onFailure = { LoginState.Error(it.message) }
             )
         }
