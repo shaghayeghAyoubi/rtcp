@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.myapplication.data.mapper.toDomain
 import com.example.myapplication.data.model.FaceRecognitionMessageDto
@@ -359,22 +361,17 @@ class WebSocketManager @Inject constructor(
         }
     }
 
-    private fun sendForbiddenNotification() {
-        // If Android 13+, check runtime notification permission
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-                Log.w(TAG, "No POST_NOTIFICATIONS permission; skip showing notification")
-                return
-            }
-        }
 
-        NotificationUtil.show(
-            context,
-            "⚠ Forbidden",
-            "Forbidden message received!"
-        )
+    private fun sendForbiddenNotification() {
+        val intent = Intent(context, PushNotificationService::class.java)
+            .putExtra("msg", "⚠ Forbidden message received!")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
     }
+
 
     /**
      * Internal disconnect logic (clears subscriptions). Caller should hold mutex if needed.

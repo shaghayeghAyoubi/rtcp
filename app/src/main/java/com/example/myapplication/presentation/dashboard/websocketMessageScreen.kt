@@ -59,18 +59,6 @@ fun WebSocketMessageScreen(navController: NavController, webSocketManager: WebSo
                 ) {
                     items(messages) { message ->
 
-                        if (message.message == "OK") {
-                            LaunchedEffect(message) {
-                                val intent = Intent(context, PushNotificationService::class.java)
-                                    .putExtra("msg", "⚠ Forbidden message received!")
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    context.startForegroundService(intent)
-                                } else {
-                                    context.startService(intent)
-                                }
-                            }
-                        }
-
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(4.dp)

@@ -11,7 +11,7 @@ object NotificationUtil {
     const val CHANNEL_ID = "PushNotificationChannel"
     const val CHANNEL_NAME = "Push Notifications"
 
-    private fun ensureChannel(context: Context) {
+    fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val mgr = context.getSystemService(NotificationManager::class.java)
             val existing = mgr?.getNotificationChannel(CHANNEL_ID)
