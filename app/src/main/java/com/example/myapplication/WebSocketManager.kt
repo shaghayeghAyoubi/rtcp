@@ -2,12 +2,15 @@ package com.example.myapplication
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
+import androidx.core.content.ContextCompat
 import com.example.myapplication.data.mapper.toDomain
 import com.example.myapplication.data.model.FaceRecognitionMessageDto
 import com.example.myapplication.domain.model.FaceRecognitionMessage
 import com.example.myapplication.domain.repository.TokenRepository
+import com.example.myapplication.utils.NotificationUtil
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
@@ -332,9 +335,9 @@ class WebSocketManager @Inject constructor(
 
     private fun subscribeToMessages() {
         stompClient?.let { client ->
-            Log.d(TAG, "🧷 Subscribing to /topic/messages")
+            Log.d(TAG, "🧷 Subscribing to /user/queue/messages")
             compositeDisposable.add(
-                client.topic("/topic/messages")
+                client.topic("/user/queue/messages")
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ message ->
@@ -357,13 +360,20 @@ class WebSocketManager @Inject constructor(
     }
 
     private fun sendForbiddenNotification() {
-        val intent = Intent(context, PushNotificationService::class.java)
-            .putExtra("msg", "⚠ Forbidden message received!")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
+        // If Android 13+, check runtime notification permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "No POST_NOTIFICATIONS permission; skip showing notification")
+                return
+            }
         }
+
+        NotificationUtil.show(
+            context,
+            "⚠ Forbidden",
+            "Forbidden message received!"
+        )
     }
 
     /**

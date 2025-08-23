@@ -28,15 +28,15 @@ class PushNotificationService : Service() {
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Notification")
             .setContentText(message)
+            .setSmallIcon(R.drawable.ic_launcher_background)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
 
         // Start service in the foreground
-        startForeground(System.currentTimeMillis().toInt(), notification)
-
-        // Stop the service shortly after showing notification
-        stopSelf()
+        // Show notification without foreground service
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(System.currentTimeMillis().toInt(), notification)
 
         return START_NOT_STICKY
     }
