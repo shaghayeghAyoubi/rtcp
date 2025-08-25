@@ -7,21 +7,22 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
+
+
 object NotificationUtil {
-    const val CHANNEL_ID = "PushNotificationChannel"
-    const val CHANNEL_NAME = "Push Notifications"
+    private const val CHANNEL_ID = "websocket_channel"
+    private const val CHANNEL_NAME = "WebSocket Notifications"
 
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val mgr = context.getSystemService(NotificationManager::class.java)
-            val existing = mgr?.getNotificationChannel(CHANNEL_ID)
-            if (existing == null) {
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (manager.getNotificationChannel(CHANNEL_ID) == null) {
                 val channel = NotificationChannel(
                     CHANNEL_ID,
                     CHANNEL_NAME,
                     NotificationManager.IMPORTANCE_HIGH
-                ).apply { description = "Push notifications from server" }
-                mgr?.createNotificationChannel(channel)
+                )
+                manager.createNotificationChannel(channel)
             }
         }
     }
@@ -31,8 +32,7 @@ object NotificationUtil {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(text)
-            // use a valid icon; android built-in works for quick test:
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setSmallIcon(android.R.drawable.ic_dialog_info) // must be valid
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
 

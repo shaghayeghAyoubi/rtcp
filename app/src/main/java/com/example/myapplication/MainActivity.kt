@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -15,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -82,6 +84,42 @@ import javax.inject.Inject
 //    override fun onDestroy() {
 //        super.onDestroy()
 //        // ✅ Always clean up connection
+//        webSocketManager.disconnect()
+//    }
+//}
+//@AndroidEntryPoint
+//class MainActivity : ComponentActivity() {
+//
+//    @Inject lateinit var webSocketManager: WebSocketManager
+//
+//    @RequiresApi(Build.VERSION_CODES.O)
+//    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//
+//        setContent {
+//            val navController = rememberNavController()
+//            NavHost(
+//                navController = navController,
+//                startDestination = "login"
+//            ) {
+//                composable("login") { LoginScreen(navController) }
+//                composable("camera_list") { CameraListScreen(navController) }
+//                composable("messages") { WebSocketMessageScreen(navController, webSocketManager) }
+//            }
+//        }
+//
+//        // Attempt initial connect if token already stored.
+//        lifecycleScope.launch {
+//            try {
+//                webSocketManager.connect()
+//            } catch (e: Exception) {
+//                Log.e("MainActivity", "Failed initial websocket connect", e)
+//            }
+//        }
+//    }
+//
+//    override fun onDestroy() {
+//        super.onDestroy()
 //        webSocketManager.disconnect()
 //    }
 //}
