@@ -283,7 +283,12 @@ class WebSocketManager @Inject constructor(
     /**
      * Manual connect trigger. Will use latest token from repository.
      */
-    suspend fun connect() {
+    fun connectAsync() {
+        CoroutineScope(Dispatchers.IO).launch {
+            connect()
+        }
+    }
+    private suspend fun connect() {
         val token = tokenRepository.getAccessToken().firstOrNull()
         if (token.isNullOrEmpty()) {
             Log.w(TAG, "connect() called but no token available")

@@ -16,11 +16,17 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.os.SystemClock;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
-
+import kotlinx.coroutines.CoroutineScope;
+import kotlinx.coroutines.CoroutineScopeKt;
+import kotlinx.coroutines.Dispatchers;
+import kotlin.Unit;
+import kotlin.coroutines.Continuation;
+import kotlin.jvm.functions.Function2;
 
 
 
@@ -51,14 +57,18 @@ import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
 public class PushNotificationService extends Service {
+
     private static final String CHANNEL_ID = "ForegroundServiceChannel";
     private Looper serviceLooper;
     private ServiceHandler serviceHandler;
-
+    @Inject
+    WebSocketManager webSocketManager;
     private final class ServiceHandler extends Handler {
         public ServiceHandler(Looper looper) {
             super(looper);
         }
+
+
         @Override
         public void handleMessage(Message msg) {
             try {
@@ -71,6 +81,7 @@ public class PushNotificationService extends Service {
         }
     }
 
+
     @SuppressLint("ForegroundServiceType")
     @Override
     public void onCreate() {
@@ -78,13 +89,20 @@ public class PushNotificationService extends Service {
         thread.start();
         serviceLooper = thread.getLooper();
         serviceHandler = new ServiceHandler(serviceLooper);
-
         createNotificationChannel();
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Foreground Service")
                 .setContentText("Service is running")
                 .build();
         startForeground(1, notification);
+
+        // ✅ Use Hilt-injected WebSocketManager
+        if (webSocketManager != null) {
+            webSocketManager.connectAsync();
+        } else {
+            Log.e("PushNotificationService", "webSocketManager is null! Injection failed.");
+        }
+
     }
 
     private void createNotificationChannel() {
@@ -158,6 +176,10 @@ public class PushNotificationService extends Service {
 
     @Override
     public void onDestroy() {
+        if (webSocketManager != null) {
+            webSocketManager.disconnect();
+        }
+        super.onDestroy();
         Toast.makeText(this, "service done", Toast.LENGTH_SHORT).show();
     }
 }

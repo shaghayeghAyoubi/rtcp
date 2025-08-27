@@ -145,17 +145,15 @@ class MainActivity : ComponentActivity() {
         }
 
         // Attempt initial connect if token already stored.
-        lifecycleScope.launch {
-            try {
-                webSocketManager.connect()
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Failed initial websocket connect", e)
-            }
+        val serviceIntent = Intent(this, PushNotificationService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        webSocketManager.disconnect()
     }
 }
