@@ -76,55 +76,25 @@ fun CameraListScreen(
                 }
             }
             else -> {
-                Column(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                ) {
+                    // --- Cameras ---
+                    items(state.cameras.size) { index ->
+                        val camera = state.cameras[index]
 
-                    // 1. Recognized people horizontal list
-                    if (recognizedPeopleState.isLoading) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    } else if (recognizedPeopleState.error != null) {
-                        Text(
-                            text = "Error: ${recognizedPeopleState.error}",
-                            modifier = Modifier.padding(8.dp),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    } else {
-                        RecognizedPeopleList(recognizedPeople = recognizedPeopleState.recognizedPeople)
-                    }
-                    StartServiceButton()
-                    // 2. Camera list vertical LazyColumn
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
-                    ) {
-                        items(state.cameras.size) { index ->
-                            val camera = state.cameras[index]
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp)
-                                    .clickable {
-                                        selectedCameraId = camera.id
-                                        navController.navigate("messages")
-                                    },
-                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                colors = if (camera.id == selectedCameraId)
-                                    CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                                else
-                                    CardDefaults.cardColors()
-                            ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = "Title: ${camera.title}",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "ID: ${camera.id}",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .clickable {
+                                    selectedCameraId = camera.id
+                                    navController.navigate("messages")
                                 }
-                            }
+                        ) {
+                            // --- Video ---
                             WebRtcVideoScreen(
                                 id = camera.id,
                                 channel = 1,
@@ -132,34 +102,55 @@ fun CameraListScreen(
                                     .height(250.dp)
                                     .fillMaxWidth()
                             )
+
+                            // --- Camera title overlay ---
+                            Text(
+                                text = camera.title,
+                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = 8.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = RoundedCornerShape(50)
+                                    )
+                                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
 
-                    if (state.loadingStream) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                    // --- Recognized people under cameras ---
+                    item {
+                        if (recognizedPeopleState.isLoading) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        } else if (recognizedPeopleState.error != null) {
+                            Text(
+                                text = "Error: ${recognizedPeopleState.error}",
+                                modifier = Modifier.padding(8.dp),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        } else {
+                            RecognizedPeopleList(
+                                recognizedPeople = recognizedPeopleState.recognizedPeople
+                            )
                         }
+                    }
+                }
+
+                if (state.loadingStream) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
                     }
                 }
             }
         }
-    }
-}
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun StartServiceButton() {
-    val context = LocalContext.current
-
-    Button(onClick = {
-        val intent = Intent(context, PushNotificationService::class.java)
-        context.startForegroundService(intent)
-    }) {
-        Text("Start Foreground Service")
     }
 }
 @Composable
