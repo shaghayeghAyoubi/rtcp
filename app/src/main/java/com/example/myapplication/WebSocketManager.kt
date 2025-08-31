@@ -374,13 +374,7 @@ class WebSocketManager @Inject constructor(
 
 
     private fun sendForbiddenNotification() {
-        val intent = Intent(context, PushNotificationService::class.java)
-            .putExtra("msg", "⚠ Forbidden message received!")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
-        }
+
     }
 
 
