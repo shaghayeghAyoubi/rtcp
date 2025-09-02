@@ -39,7 +39,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 
 enum class WebRtcStatus {
-    LOADING, CONNECTED, ERROR
+    LOADING, CONNECTED,CONNECTING, ERROR
 }
 
 

@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.myapplication.PushNotificationService
 import com.example.myapplication.domain.model.RecognizedPerson
 import com.example.myapplication.presentation.webrtc.WebRtcStatus
@@ -222,21 +223,64 @@ fun WebRtcVideoScreen(
     id: Int,
     channel: Int,
     modifier: Modifier = Modifier,
+    // keep the hiltViewModel as you had it (optionally pass a navBackStackEntry if you want a different scope)
     viewModel: WebRtcViewModel = hiltViewModel(key = "$id-$channel")
 ) {
     val videoTrack by viewModel.remoteVideoTrack.observeAsState()
     val status by viewModel.status.observeAsState(WebRtcStatus.LOADING)
-    LaunchedEffect(id, channel) {
+
+    val rendererRef = remember { mutableStateOf<SurfaceViewRenderer?>(null) }
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Only attempt to connect when we actually need a connection.
+    // Use status in the key so this effect will run when status changes.
+    LaunchedEffect(id, channel, status) {
+        // If already connected or connecting, don't reconnect.
+        if (status == WebRtcStatus.CONNECTED || status == WebRtcStatus.CONNECTING) return@LaunchedEffect
+        // otherwise, ask the ViewModel to connect
         viewModel.connectWebRtc(id = id, channel = channel)
     }
-    // Cleanup when leaving
-    DisposableEffect(Unit) {
+
+    // Create the SurfaceViewRenderer exactly once and keep a reference for sink management.
+    AndroidView(
+        factory = { ctx ->
+            SurfaceViewRenderer(ctx).apply {
+                // initialize with EGL context from ViewModel (assuming viewModel.eglBase exists)
+                init(viewModel.eglBase.eglBaseContext, null)
+                setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
+                setZOrderMediaOverlay(true)
+                rendererRef.value = this
+            }
+        },
+        update = { /* nothing here; sink management handled below */ },
+        modifier = modifier
+    )
+
+    // Manage adding and removing sinks based on current videoTrack & renderer lifecycle.
+    DisposableEffect(videoTrack, rendererRef.value) {
+        val renderer = rendererRef.value
+        if (videoTrack != null && renderer != null) {
+            // add sink when both track + renderer are available
+            videoTrack!!.addSink(renderer)
+        }
+
         onDispose {
-            viewModel.release()
+            // remove sink on disposal (so we don't leak or double-add on recompose)
+            if (videoTrack != null && renderer != null) {
+                try {
+                    videoTrack!!.removeSink(renderer)
+                } catch (_: Exception) { /* safe-guard if already removed */ }
+            }
+            // don't force-release renderer here if you want to reuse it across short-lived recompositions.
+            // If you truly want to tear it down when the composable is destroyed for good, you can call:
+            // renderer?.release()
+            // rendererRef.value = null
         }
     }
 
-        Box(modifier = modifier.fillMaxSize()) {
+    // Optional: show UI for statuses and loading
+    Box(modifier = Modifier.fillMaxSize()) {
         when (status) {
             WebRtcStatus.LOADING -> {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -249,24 +293,16 @@ fun WebRtcVideoScreen(
                 )
             }
             WebRtcStatus.CONNECTED -> {
-                videoTrack?.let { track ->
-                    AndroidView(
-                        factory = { context ->
-                            SurfaceViewRenderer(context).apply {
-                                init(viewModel.eglBase.eglBaseContext, null)
-                                setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)
-                                setZOrderMediaOverlay(true)
-                            }
-                        },
-                        update = { renderer -> track.addSink(renderer) },
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                // video is rendered by the SurfaceViewRenderer that we created above
             }
+
+            WebRtcStatus.CONNECTING -> TODO()
         }
     }
-}
 
+    // IMPORTANT: do NOT call viewModel.release() inside a DisposableEffect that runs on every leave.
+    // Instead, let the ViewModel release resources in onCleared(), or release when the NavBackStackEntry is destroyed.
+}
 fun base64ToBitmap(base64Str: String): Bitmap? {
     return try {
         val decodedBytes = android.util.Base64.decode(base64Str, android.util.Base64.DEFAULT)
