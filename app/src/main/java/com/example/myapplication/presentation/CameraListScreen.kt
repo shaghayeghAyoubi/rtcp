@@ -226,11 +226,17 @@ fun WebRtcVideoScreen(
 ) {
     val videoTrack by viewModel.remoteVideoTrack.observeAsState()
     val status by viewModel.status.observeAsState(WebRtcStatus.LOADING)
-    LaunchedEffect(Unit) {
+    LaunchedEffect(id, channel) {
         viewModel.connectWebRtc(id = id, channel = channel)
     }
+    // Cleanup when leaving
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.release()
+        }
+    }
 
-    Box(modifier = modifier.fillMaxSize()) {
+        Box(modifier = modifier.fillMaxSize()) {
         when (status) {
             WebRtcStatus.LOADING -> {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))

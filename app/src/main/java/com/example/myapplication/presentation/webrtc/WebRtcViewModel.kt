@@ -177,8 +177,20 @@ class WebRtcViewModel @Inject constructor(
         }
     }
 
+    fun release() {
+        _remoteVideoTrack.value?.let { track ->
+            track.setEnabled(false)
+            track.dispose()
+        }
+        _remoteVideoTrack.postValue(null)
+        peerConnection?.close()
+        peerConnection = null
+        _status.postValue(WebRtcStatus.ERROR) // or IDLE
+    }
+
     override fun onCleared() {
         super.onCleared()
-        peerConnection?.close()
+        release()
+        eglBase.release()
     }
 }
