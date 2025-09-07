@@ -11,7 +11,7 @@ package com.example.myapplication.presentation.login
 //import androidx.compose.ui.text.input.PasswordVisualTransformation
 //import androidx.compose.ui.unit.dp
 //import androidx.hilt.navigation.compose.hiltViewModel
-//import com.example.myapplication.presentation.CameraListViewModel
+//import com.example.myapplication.presentation.dashboard.CameraListViewModel
 //import com.example.yourapp.presentation.login.LoginViewModel
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -181,7 +181,7 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
     var passwordVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         viewModel.navigateToCameraList.collect {
-            navController.navigate("camera_list") {
+            navController.navigate("main") {
                 popUpTo("login") { inclusive = true } // Optional: clear back stack
             }
         }

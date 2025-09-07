@@ -1,9 +1,8 @@
-package com.example.myapplication.presentation
+package com.example.myapplication.presentation.dashboard
 
 
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -22,25 +21,16 @@ import androidx.navigation.NavController
 
 import org.webrtc.RendererCommon
 import org.webrtc.SurfaceViewRenderer
-import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.example.myapplication.PushNotificationService
-import com.example.myapplication.domain.model.RecognizedPerson
-import com.example.myapplication.presentation.webrtc.WebRtcStatus
-import com.example.myapplication.presentation.webrtc.WebRtcViewModel
+import com.example.myapplication.presentation.dashboard.webrtc.WebRtcStatus
+import com.example.myapplication.presentation.dashboard.webrtc.WebRtcViewModel
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -50,7 +40,7 @@ fun CameraListScreen(
     viewModel: CameraListViewModel = hiltViewModel()
 ) {
     val state = viewModel.state.collectAsState().value
-    val recognizedPeopleState = viewModel.recognizedPeopleState.collectAsState().value
+
 
     var selectedCameraId by remember { mutableStateOf<Int?>(null) }
 
@@ -90,10 +80,10 @@ fun CameraListScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp)
-                                .clickable {
-                                    selectedCameraId = camera.id
-                                    navController.navigate("messages")
-                                }
+//                                .clickable {
+//                                    selectedCameraId = camera.id
+//                                    navController.navigate("messages")
+//                                }
                         ) {
                             // --- Video ---
                             WebRtcVideoScreen(
@@ -122,22 +112,7 @@ fun CameraListScreen(
                         }
                     }
 
-                    // --- Recognized people under cameras ---
-                    item {
-                        if (recognizedPeopleState.isLoading) {
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                        } else if (recognizedPeopleState.error != null) {
-                            Text(
-                                text = "Error: ${recognizedPeopleState.error}",
-                                modifier = Modifier.padding(8.dp),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        } else {
-                            RecognizedPeopleList(
-                                recognizedPeople = recognizedPeopleState.recognizedPeople
-                            )
-                        }
-                    }
+
                 }
 
                 if (state.loadingStream) {
@@ -154,70 +129,7 @@ fun CameraListScreen(
         }
     }
 }
-@Composable
-fun RecognizedPeopleList(recognizedPeople: List<RecognizedPerson>) {
-    LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 16.dp)
-    ) {
-        items(recognizedPeople) { person ->
-            Card(
-                modifier = Modifier
-                    .width(150.dp)
-                    .clickable {
-                        // Optional: handle click, navigate, etc.
-                    },
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    val bitmap = remember(person.croppedFaceUrl) {
-                        base64ToBitmap(person.croppedFaceUrl)
-                    }
 
-                    if (bitmap != null) {
-                        Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "Cropped face",
-                            modifier = Modifier
-                                .size(100.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .size(100.dp)
-                                .background(Color.Gray, RoundedCornerShape(8.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = "No Image", color = Color.White)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = person.camera.title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = person.recognizedDate.take(10), // Show date only (yyyy-MM-dd)
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                }
-            }
-        }
-    }
-}
 @Composable
 fun WebRtcVideoScreen(
     id: Int,

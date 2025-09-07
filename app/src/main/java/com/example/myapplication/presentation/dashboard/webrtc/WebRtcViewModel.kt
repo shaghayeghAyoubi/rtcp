@@ -1,4 +1,4 @@
-package com.example.myapplication.presentation.webrtc
+package com.example.myapplication.presentation.dashboard.webrtc
 
 import android.content.Context
 import androidx.lifecycle.LiveData

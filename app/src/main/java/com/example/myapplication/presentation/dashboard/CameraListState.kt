@@ -1,4 +1,4 @@
-package com.example.myapplication.presentation
+package com.example.myapplication.presentation.dashboard
 
 import com.example.myapplication.domain.model.Camera
 

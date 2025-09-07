@@ -57,6 +57,7 @@ class LoginViewModel @Inject constructor(
                 onSuccess = {
                     _navigateToCameraList.emit(Unit)  // just navigate
                     LoginState.Success(it)
+
                 },
                 onFailure = { LoginState.Error(it.message) }
             )
