@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">برنامه من</string>
+    <string name="recognized_people">افراد شناسایی شده</string>
+    <string name="no_data">هیچ فردی یافت نشد</string>
+    <string name="loading">در حال بارگذاری…</string>
+    <string name="error">خطا: %1$s</string>
+</resources>

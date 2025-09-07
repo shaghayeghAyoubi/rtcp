@@ -12,8 +12,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -21,19 +23,24 @@ import androidx.navigation.compose.rememberNavController
 import com.example.myapplication.WebSocketManager
 import com.example.myapplication.presentation.dashboard.CameraListScreen
 import com.example.myapplication.presentation.event.WebSocketMessageScreen
+import com.example.myapplication.presentation.localization.LocalizationViewModel
+import com.example.myapplication.presentation.localization.strings.Strings
 import com.example.myapplication.presentation.navigation.Screen
 import com.example.myapplication.presentation.recognized_poeple.RecognizedPeopleScreen
+import com.example.myapplication.presentation.settings.SettingsScreen
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MainNavHost(
     webSocketManager: WebSocketManager,
     initialIntent: Intent? = null,
-    onLogout: () -> Unit = {}
+
+    onLogout: () -> Unit = {},
+    localizationViewModel: LocalizationViewModel = hiltViewModel()
 ) {
     val navController = rememberNavController()
-    val items = listOf(Screen.Event, Screen.Dashboard, Screen.RecognizedPeople)
-
+    val items = listOf(Screen.Event, Screen.Dashboard, Screen.RecognizedPeople,Screen.Settings)
+    val strings by localizationViewModel.strings.collectAsState()
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -42,8 +49,8 @@ fun MainNavHost(
 
                 items.forEach { screen ->
                     NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.title) },
-                        label = { Text(screen.title) },
+                        icon = { Icon(screen.icon, contentDescription = screen.title(strings)) },
+                        label = { Text(screen.title(strings)) },
                         selected = currentRoute == screen.route,
                         onClick = {
                             navController.navigate(screen.route) {
@@ -65,7 +72,7 @@ fun MainNavHost(
             composable(Screen.Event.route) { WebSocketMessageScreen( webSocketManager) }
             composable(Screen.Dashboard.route) { CameraListScreen(navController = navController) }
             composable(Screen.RecognizedPeople.route) { RecognizedPeopleScreen() }
-
+            composable(Screen.Settings.route) { SettingsScreen() }
 
         }
     }

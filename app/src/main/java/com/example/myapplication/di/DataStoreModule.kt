@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.example.myapplication.data.datasource.local.LanguageLocalDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,5 +22,11 @@ object DataStoreModule {
         return PreferenceDataStoreFactory.create {
             context.preferencesDataStoreFile("user_prefs")
         }
+    }
+    // Provide LanguageLocalDataSource
+    @Provides
+    @Singleton
+    fun provideLanguageLocalDataSource(@ApplicationContext context: Context): LanguageLocalDataSource {
+        return LanguageLocalDataSource(context)
     }
 }
