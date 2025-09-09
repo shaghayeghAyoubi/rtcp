@@ -8,4 +8,5 @@ object StringsFa : Strings {
     override val dashboard = "داشبورد"
     override val event = "رویداد"
     override val settings = "تنظیمات"
+    override val similarity = "شباهت"
 }

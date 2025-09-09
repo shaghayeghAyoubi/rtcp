@@ -5,11 +5,14 @@ import com.example.myapplication.data.remote.api.AuthApi
 
 import com.example.myapplication.data.remote.api.SurveillanceApi
 import com.example.myapplication.data.remote.network.TokenInterceptor
+import com.example.myapplication.domain.repository.BaseUrlRepository
 import com.example.myapplication.utils.UnsafeOkHttpClient
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 
@@ -70,9 +73,12 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient,   baseUrlRepository: BaseUrlRepository): Retrofit {
+        val baseUrl = runBlocking {
+            baseUrlRepository.getBaseUrl().firstOrNull() ?: BASE_URL
+        }
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(baseUrl)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

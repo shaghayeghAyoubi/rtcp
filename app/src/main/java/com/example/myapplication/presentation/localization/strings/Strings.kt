@@ -8,4 +8,5 @@ interface Strings {
     val dashboard : String
     val event : String
     val settings : String
+    val similarity : String
 }

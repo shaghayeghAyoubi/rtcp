@@ -42,20 +42,27 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.presentation.event.base64ToBitmap
+import com.example.myapplication.presentation.localization.LocalizationViewModel
+import com.example.myapplication.presentation.localization.strings.Strings
+import com.example.myapplication.presentation.localization.strings.StringsFa
 import kotlinx.coroutines.flow.collect
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecognizedPeopleScreen(
-    viewModel: RecognizedPeopleViewModel = hiltViewModel()
+    viewModel: RecognizedPeopleViewModel = hiltViewModel() ,
+    localizationViewModel: LocalizationViewModel = hiltViewModel()
 ) {
     val state by viewModel.recognizedPeopleState.collectAsState()
     val listState = rememberLazyListState()
+    val strings by localizationViewModel.strings.collectAsState()
 
     // Infinite scroll trigger
     LaunchedEffect(listState) {
@@ -91,7 +98,7 @@ fun RecognizedPeopleScreen(
                         .padding(12.dp)
                 ) {
                     items(state.recognizedPeople) { person ->
-                        RecognizedPersonItem(person)
+                        RecognizedPersonItem(person, strings)
                     }
 
                     if (state.isLoading && state.recognizedPeople.isNotEmpty()) {
@@ -113,42 +120,54 @@ fun RecognizedPeopleScreen(
 }
 
 @Composable
-fun RecognizedPersonItem(person: RecognizedPerson) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Row(modifier = Modifier.padding(12.dp)) {
-            val bitmap = remember(person.croppedFaceUrl) {
-                base64ToBitmap(person.croppedFaceUrl)
-            }
-
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "Recognized Face",
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(Color.Gray, RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No Img", color = Color.White, fontSize = 10.sp)
+fun RecognizedPersonItem(person: RecognizedPerson, strings: Strings) {
+    val layoutDirection = when (strings) {
+        is StringsFa -> LayoutDirection.Rtl
+        else -> LayoutDirection.Ltr
+    }
+    CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Row(modifier = Modifier.padding(12.dp)) {
+                val bitmap = remember(person.croppedFaceUrl) {
+                    base64ToBitmap(person.croppedFaceUrl)
                 }
-            }
 
-            Spacer(modifier = Modifier.width(12.dp))
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Recognized Face",
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(Color.Gray, RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No Img", color = Color.White, fontSize = 10.sp)
+                    }
+                }
 
-            Column {
-                Text("📷 ${person.camera.title}", style = MaterialTheme.typography.bodyMedium)
-                Text("📅 ${person.recognizedDate.take(16)}", style = MaterialTheme.typography.bodySmall)
-                Text("🔍 Similarity: ${person.similarity}%", style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Text("📷 ${person.camera.title}", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "📅 ${person.recognizedDate.take(16)}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        "🔍 ${strings.similarity}: ${person.similarity}%",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
         }
     }

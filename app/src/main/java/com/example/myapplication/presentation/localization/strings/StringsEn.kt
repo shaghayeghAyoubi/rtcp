@@ -8,4 +8,5 @@ object StringsEn : Strings {
     override val dashboard = "Dashboard"
     override val event = "Event"
     override val settings = "Settings"
+    override val similarity = "Similarity"
 }
