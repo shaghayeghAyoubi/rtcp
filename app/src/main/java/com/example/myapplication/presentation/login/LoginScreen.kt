@@ -37,8 +37,11 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.example.myapplication.R
+import com.example.myapplication.presentation.settings.SettingsScreen
 import com.example.yourapp.presentation.login.LoginViewModel
 
 
@@ -179,6 +182,7 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
     val loginState = viewModel.loginState
 
     var passwordVisible by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         viewModel.navigateToCameraList.collect {
             navController.navigate("main") {
@@ -236,7 +240,17 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
+            TextButton(
+                onClick = { showSettingsDialog = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Need to change language or API URL? Go to Settings",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
+            }
             Button(
                 onClick = { viewModel.login() },
                 modifier = Modifier.fillMaxWidth()
@@ -249,11 +263,29 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
             when (val state = viewModel.loginState) {
                 is LoginState.Loading -> CircularProgressIndicator()
                 is LoginState.Success -> {
-                    Text("Welcome, ${state.response.accessToken}")
-                    Text("Refresh Token: ${state.response.refreshToken}")
+                    Text("Welcome")
+                    Text("Refresh Token")
                 }
                 is LoginState.Error -> Text("Login Failed: ${state.message}", color = Color.Red)
                 LoginState.Idle -> {}
+            }
+        }
+    }
+    if (showSettingsDialog) {
+        Dialog(onDismissRequest = { showSettingsDialog = false }) {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.background,
+                modifier = Modifier
+                    .width(900.dp)
+                    .height(450.dp)
+            ) {
+                SettingsScreen(
+                    localizationViewModel = hiltViewModel(),
+                    settingsViewModel = hiltViewModel(),
+                    isDialog = true, // 👈 tell it’s inside dialog
+                    onSave = { showSettingsDialog = false }
+                )
             }
         }
     }

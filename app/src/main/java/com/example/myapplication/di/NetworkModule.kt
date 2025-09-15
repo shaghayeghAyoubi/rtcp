@@ -1,5 +1,6 @@
 package com.example.myapplication.di
 
+import com.example.myapplication.data.remote.RetrofitFactory
 import com.example.myapplication.data.remote.api.AuthApi
 
 
@@ -63,7 +64,6 @@ object NetworkModule {
         val logging = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
-
         return UnsafeOkHttpClient.getUnsafeOkHttpClient()
             .newBuilder()
             .addInterceptor(tokenInterceptor)
@@ -73,30 +73,13 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient,   baseUrlRepository: BaseUrlRepository): Retrofit {
-        val baseUrl = runBlocking {
-            baseUrlRepository.getBaseUrl().firstOrNull() ?: BASE_URL
-        }
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+    fun provideRetrofitFactory(okHttpClient: OkHttpClient): RetrofitFactory {
+        return RetrofitFactory(okHttpClient)
     }
 
 
 
-    @Provides
-    @Singleton
-    fun provideSurveillanceApi(retrofit: Retrofit): SurveillanceApi {
-        return retrofit.create(SurveillanceApi::class.java)
-    }
 
-    @Provides
-    @Singleton
-    fun provideAuthApi(retrofit: Retrofit): AuthApi {
-        return retrofit.create(AuthApi::class.java)
-    }
 
 
 }
