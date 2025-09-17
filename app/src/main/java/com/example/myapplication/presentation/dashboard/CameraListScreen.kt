@@ -24,11 +24,13 @@ import org.webrtc.SurfaceViewRenderer
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.myapplication.domain.model.NotificationFilter
 import com.example.myapplication.presentation.dashboard.webrtc.WebRtcStatus
 import com.example.myapplication.presentation.dashboard.webrtc.WebRtcViewModel
 
@@ -37,92 +39,99 @@ import com.example.myapplication.presentation.dashboard.webrtc.WebRtcViewModel
 @Composable
 fun CameraListScreen(
     navController: NavController,
-    viewModel: CameraListViewModel = hiltViewModel()
+    viewModel: CameraListViewModel = hiltViewModel(),
+    notificationSettingsViewModel: NotificationSettingsViewModel = hiltViewModel()
 ) {
     val state = viewModel.state.collectAsState().value
 
 
     var selectedCameraId by remember { mutableStateOf<Int?>(null) }
+    Column(modifier = Modifier.fillMaxSize()) {
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            state.isLoading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+        // --- Dropdown goes here ---
+        NotificationFilterDropdown(viewModel = notificationSettingsViewModel)
+        Box(modifier = Modifier.fillMaxSize()) {
+            when {
+                state.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-            }
-            state.error != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Error: ${state.error}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-            else -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    // --- Cameras ---
-                    items(state.cameras.size) { index ->
-                        val camera = state.cameras[index]
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
+                state.error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Error: ${state.error}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                    ) {
+                        // --- Cameras ---
+                        items(state.cameras.size) { index ->
+                            val camera = state.cameras[index]
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
 //                                .clickable {
 //                                    selectedCameraId = camera.id
 //                                    navController.navigate("messages")
 //                                }
-                        ) {
-                            // --- Video ---
-                            WebRtcVideoScreen(
-                                id = camera.id,
-                                channel = 1,
-                                modifier = Modifier
-                                    .height(250.dp)
-                                    .fillMaxWidth()
-                            )
+                            ) {
+                                // --- Video ---
+                                WebRtcVideoScreen(
+                                    id = camera.id,
+                                    channel = 1,
+                                    modifier = Modifier
+                                        .height(250.dp)
+                                        .fillMaxWidth()
+                                )
 
-                            // --- Camera title overlay ---
-                            Text(
-                                text = camera.title,
-                                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(top = 8.dp)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shape = RoundedCornerShape(50)
-                                    )
-                                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+                                // --- Camera title overlay ---
+                                Text(
+                                    text = camera.title,
+                                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.White),
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .padding(top = 8.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            shape = RoundedCornerShape(50)
+                                        )
+                                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
+
+
                     }
 
-
-                }
-
-                if (state.loadingStream) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                    if (state.loadingStream) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+                        }
                     }
                 }
             }
@@ -222,5 +231,49 @@ fun base64ToBitmap(base64Str: String): Bitmap? {
     } catch (e: Exception) {
         android.util.Log.e("Base64", "Failed to decode image", e)
         null
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotificationFilterDropdown(
+    viewModel: NotificationSettingsViewModel = hiltViewModel()
+) {
+    val currentFilter by viewModel.notificationFilter.collectAsState()
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+    ) {
+        // Text field styled dropdown
+        OutlinedTextField(
+            value = currentFilter.name,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Notification Filter") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+
+        // Dropdown items
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            NotificationFilter.values().forEach { filter ->
+                DropdownMenuItem(
+                    text = { Text(filter.name) },
+                    onClick = {
+                        viewModel.updateFilter(filter)
+                        expanded = false
+                    }
+                )
+            }
+        }
     }
 }

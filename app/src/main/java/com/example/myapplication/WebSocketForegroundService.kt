@@ -13,8 +13,11 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import com.example.myapplication.data.datasource.local.NotificationFilterLocalDataSource
 import com.example.myapplication.domain.model.FaceRecognitionMessage
+import com.example.myapplication.domain.model.NotificationFilter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,6 +27,9 @@ import javax.inject.Inject
 class WebSocketForegroundService : LifecycleService() {
 
     @Inject lateinit var webSocketManager: WebSocketManager
+
+    @Inject lateinit var notificationFilterLocalDataSource: NotificationFilterLocalDataSource
+
 
     private val serviceScope = lifecycleScope // available on LifecycleService
 
@@ -77,15 +83,26 @@ class WebSocketForegroundService : LifecycleService() {
     }
 
     private fun startCollectingMessages() {
-        // launch a collector that posts notifications for interesting messages
         serviceScope.launch {
-            webSocketManager.messages.collect { list ->
-                // react to the latest message(s). For example, handle only newest
-                if (list.isNotEmpty()) {
-                    val latest = list.last()
-                    // Example condition; adapt to your domain
-                    if (latest.message == "OK") {
-                        postIncomingMessageNotification(latest)
+            // Collect both filter + messages
+            launch {
+                webSocketManager.messages.collect { list ->
+                    if (list.isNotEmpty()) {
+                        val latest = list.last()
+
+                        // Get current filter from DataStore
+                        val filter = notificationFilterLocalDataSource.getFilter().first()
+
+                        // Apply filter logic
+                        val shouldNotify = when (filter) {
+                            NotificationFilter.ALL -> true
+                            NotificationFilter.ONLY_OK -> latest.message == "OK"
+                            NotificationFilter.ONLY_FORBIDDEN -> latest.message == "ERROR"
+                        }
+
+                        if (shouldNotify) {
+                            postIncomingMessageNotification(latest)
+                        }
                     }
                 }
             }

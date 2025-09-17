@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.example.myapplication.data.datasource.local.LanguageLocalDataSource
+import com.example.myapplication.data.datasource.local.NotificationFilterLocalDataSource
 import com.example.myapplication.data.repository.BaseUrlRepositoryImpl
 import com.example.myapplication.data.repository.TokenRepositoryImpl
 import com.example.myapplication.domain.repository.BaseUrlRepository
@@ -33,7 +34,11 @@ object DataStoreModule {
     fun provideLanguageLocalDataSource(@ApplicationContext context: Context): LanguageLocalDataSource {
         return LanguageLocalDataSource(context)
     }
-
+    @Provides
+    @Singleton
+    fun provideNotificationFilterDataSource(@ApplicationContext context: Context): NotificationFilterLocalDataSource {
+        return NotificationFilterLocalDataSource(context)
+    }
     @Provides
     @Singleton
     fun provideTokenRepository(
