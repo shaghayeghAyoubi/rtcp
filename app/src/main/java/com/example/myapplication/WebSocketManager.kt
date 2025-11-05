@@ -225,6 +225,7 @@ import javax.inject.Singleton
 
 import kotlinx.coroutines.*
 import okhttp3.*
+
 @Singleton
 class WebSocketManager @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -240,12 +241,52 @@ class WebSocketManager @Inject constructor(
         private const val TAG = "WebSocketManager"
     }
 
-    // expose messages as before
+    // --- Expose messages ---
     private val _messages = MutableStateFlow<List<FaceRecognitionMessage>>(emptyList())
     val messages: StateFlow<List<FaceRecognitionMessage>> = _messages.asStateFlow()
 
     init {
         observeTokenChanges()
+
+        // For testing/demo purposes
+        mockMessages()
+    }
+
+    /**
+     * Populates the message list with fake data for UI testing or offline preview.
+     */
+    fun mockMessages() {
+        val fakeMessages = listOf(
+            FaceRecognitionMessage(
+                createdDate = "2025-10-18 14:23:05",
+                message = "ONLY_FORBIDDEN",
+                nearestNeighbourSimilarity = 98.7,
+                croppedFace = null.toString(),
+                cameraTitle = "Front Gate Camera",
+                nearestNeighbourBiometricId = "BIO-12345",
+                nearestNeighbourId = "NN-001"
+            ),
+            FaceRecognitionMessage(
+                createdDate = "2025-10-18 14:24:11",
+                message = "ONLY_FORBIDDEN",
+                nearestNeighbourSimilarity = 73.4,
+                croppedFace = null.toString(),
+                cameraTitle = "Parking Entrance Camera",
+                nearestNeighbourBiometricId = "BIO-UNKNOWN",
+                nearestNeighbourId = "NN-002"
+            ),
+            FaceRecognitionMessage(
+                createdDate = "2025-10-18 14:25:42",
+                message = "ONLY_FORBIDDEN",
+                nearestNeighbourSimilarity = 95.1,
+                croppedFace = null.toString(),
+                cameraTitle = "Reception Camera",
+                nearestNeighbourBiometricId = "BIO-54321",
+                nearestNeighbourId = "NN-003"
+            )
+        )
+
+        _messages.value = fakeMessages
     }
 
     /**

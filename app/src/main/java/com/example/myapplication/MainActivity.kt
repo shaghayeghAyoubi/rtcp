@@ -2,24 +2,43 @@ package com.example.myapplication // <-- replace with your actual package
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.myapplication.domain.repository.TokenRepository
+import com.example.myapplication.presentation.AppNavHost
 
 // Replace these imports with your real classes / package paths
 import com.example.myapplication.presentation.MainNavHost
+import com.example.myapplication.presentation.event.WebSocketMessageScreen
 import com.example.myapplication.presentation.login.LoginScreen
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 
 //@AndroidEntryPoint
@@ -159,7 +178,11 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var webSocketManager: WebSocketManager
 
-    // Permission launcher for Android 13+ notification permission
+    // intent فعلی را در state نگه می‌داریم تا Compose از آن باخبر شود
+    private val _currentIntent = mutableStateOf<Intent?>(null)
+    private val currentIntent: State<Intent?> get() = _currentIntent
+
+    // برای نوتیفیکیشن در Android 13+
     private val requestNotificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
 
@@ -167,16 +190,19 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Request POST_NOTIFICATIONS on Android 13+
         requestNotificationPermissionIfNeeded()
-
-        // Start the foreground service which will in turn call webSocketManager.connectAsync()
         startWebSocketForegroundService()
+
+        // مقدار اولیه intent
+        _currentIntent.value = intent
 
         setContent {
             MaterialTheme {
-                // Pass the injected manager + initial intent to the nav host
-                AppNavHost(webSocketManager = webSocketManager, initialIntent = intent)
+                AppNavHost(
+                    webSocketManager = webSocketManager,
+                    currentIntent = currentIntent,
+                    stopWebSocketService = { stopWebSocketForegroundService() }
+                )
             }
         }
     }
@@ -185,7 +211,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val hasPermission =
                 checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                        android.content.pm.PackageManager.PERMISSION_GRANTED
+                        PackageManager.PERMISSION_GRANTED
             if (!hasPermission) {
                 requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -196,66 +222,21 @@ class MainActivity : ComponentActivity() {
         val startIntent = Intent(this, WebSocketForegroundService::class.java).apply {
             action = WebSocketForegroundService.ACTION_START
         }
-        // Use ContextCompat.startForegroundService to be safe on modern Android versions
         ContextCompat.startForegroundService(this, startIntent)
     }
 
-    fun stopWebSocketForegroundService() {
+    private fun stopWebSocketForegroundService() {
         val stopIntent = Intent(this, WebSocketForegroundService::class.java).apply {
             action = WebSocketForegroundService.ACTION_STOP
         }
         startService(stopIntent)
     }
 
+    // وقتی اپ از نوتیفیکیشن باز شد
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // keep the intent so composables can read extras (we forward to MainNavHost)
-        setIntent(intent)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        // Foreground service manages websocket lifecycle. If you want to disconnect here, do it intentionally:
-        // webSocketManager.disconnect()
-    }
-
-    /**
-     * Top-level NavHost: start at "login". After login, navigate to "main" which contains the bottom nav.
-     */
-    @RequiresApi(Build.VERSION_CODES.O)
-    @Composable
-    private fun AppNavHost(
-        webSocketManager: WebSocketManager,
-        initialIntent: Intent? = null
-    ) {
-        val navController = rememberNavController()
-
-        NavHost(
-            navController = navController,
-            startDestination = "login"
-        ) {
-            // keep your existing LoginScreen signature (you're already using LoginScreen(navController) in old code)
-            // LoginScreen should navigate to "main" when login succeeds (see snippet below).
-            composable("login") {
-                LoginScreen(navController = navController)
-            }
-
-            // After login, go to "main" which hosts bottom navigation
-            composable("main") {
-                MainNavHost(
-                    webSocketManager = webSocketManager,
-                    initialIntent = initialIntent,
-                    onLogout = {
-                        // Called from inside MainNavHost when user logs out:
-                        // - stop foreground service if you want
-                        // - go back to login and clear backstack
-                        stopWebSocketForegroundService()
-                        navController.navigate("login") {
-                            popUpTo("main") { inclusive = true }
-                        }
-                    }
-                )
-            }
-        }
+        _currentIntent.value = intent
     }
 }
+
+

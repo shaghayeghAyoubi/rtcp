@@ -27,16 +27,36 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.WebSocketManager
+import com.example.myapplication.domain.model.FaceRecognitionMessage
 import com.example.myapplication.domain.model.RecognizedPerson
 import com.example.myapplication.presentation.dashboard.CameraListViewModel
+import com.google.gson.Gson
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WebSocketMessageScreen(webSocketManager: WebSocketManager,  viewModel: CameraListViewModel = hiltViewModel()) {
+fun WebSocketMessageScreen(
+    webSocketManager: WebSocketManager,
+    viewModel: CameraListViewModel = hiltViewModel(),
+    initialIntentMessageJson: String? = null // ✅ new param
+) {
     val messages by webSocketManager.messages.collectAsState()
     val recognizedPeopleState = viewModel.recognizedPeopleState.collectAsState().value
     val context = LocalContext.current
+
+    // Keep track of the selected message for detail dialog
+    var selectedMessage by remember { mutableStateOf<FaceRecognitionMessage?>(null) }
+
+
+    // ✅ Automatically open dialog when app opened from notification
+    LaunchedEffect(initialIntentMessageJson) {
+        initialIntentMessageJson?.let {
+            runCatching {
+                val msg = Gson().fromJson(it, FaceRecognitionMessage::class.java)
+                selectedMessage = msg
+            }
+        }
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -80,52 +100,86 @@ fun WebSocketMessageScreen(webSocketManager: WebSocketManager,  viewModel: Camer
                             modifier = Modifier.padding(8.dp)
                         )
                     }
-                }else {
-
-                        items(messages) { message ->
-
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                elevation = CardDefaults.cardElevation(4.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
+                } else {
+                    items(messages) { message ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedMessage = message },
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    "🕒 Time: ${message.createdDate}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    "💬 Message: ${message.message}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                message.nearestNeighbourSimilarity?.let {
                                     Text(
-                                        "🕒 Time: ${message.createdDate}",
+                                        "🔍 Similarity: $it%",
                                         style = MaterialTheme.typography.bodySmall
                                     )
-                                    Text(
-                                        "💬 Message: ${message.message}",
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    message.nearestNeighbourSimilarity?.let {
-                                        Text(
-                                            "🔍 Similarity: $it%",
-                                            style = MaterialTheme.typography.bodySmall
+                                }
+                                message.croppedFace?.let { base64 ->
+                                    base64ToBitmap(base64)?.let { bitmap ->
+                                        Image(
+                                            painter = BitmapPainter(bitmap.asImageBitmap()),
+                                            contentDescription = "Cropped Face",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(180.dp)
+                                                .padding(top = 8.dp),
+                                            contentScale = ContentScale.Crop
                                         )
-                                    }
-                                    message.croppedFace?.let { base64 ->
-                                        base64ToBitmap(base64)?.let { bitmap ->
-                                            Image(
-                                                painter = BitmapPainter(bitmap.asImageBitmap()),
-                                                contentDescription = "Cropped Face",
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(180.dp)
-                                                    .padding(top = 8.dp),
-                                                contentScale = ContentScale.Crop
-                                            )
-                                        }
                                     }
                                 }
                             }
                         }
-
-
+                    }
                 }
             }
         }
+
+        // --- Move the dialog OUTSIDE the LazyColumn ---
+        if (selectedMessage != null) {
+            AlertDialog(
+                onDismissRequest = { selectedMessage = null },
+                title = { Text("Message Details") },
+                text = {
+                    Column {
+                        Text("🕒 Time: ${selectedMessage!!.createdDate}")
+                        Text("💬 Message: ${selectedMessage!!.message}")
+                        selectedMessage!!.nearestNeighbourSimilarity?.let {
+                            Text("🔍 Similarity: $it%")
+                        }
+                        selectedMessage!!.croppedFace?.let { base64 ->
+                            base64ToBitmap(base64)?.let { bitmap ->
+                                Image(
+                                    painter = BitmapPainter(bitmap.asImageBitmap()),
+                                    contentDescription = "Cropped Face",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(180.dp)
+                                        .padding(top = 8.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { selectedMessage = null }) {
+                        Text("Close")
+                    }
+                }
+            )
+        }
     }
 }
+
 
 @Composable
 fun RecognizedPeopleList(recognizedPeople: List<RecognizedPerson>) {
@@ -182,7 +236,7 @@ fun RecognizedPeopleList(recognizedPeople: List<RecognizedPerson>) {
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = person.recognizedDate.take(10), // Show date only (yyyy-MM-dd)
+                        text = person.recognizedDate?.take(10) ?: "-",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )

@@ -160,7 +160,7 @@ fun RecognizedPersonItem(person: RecognizedPerson, strings: Strings) {
                 Column {
                     Text("📷 ${person.camera.title}", style = MaterialTheme.typography.bodyMedium)
                     Text(
-                        "📅 ${person.recognizedDate.take(16)}",
+                        "📅 ${person.recognizedDate?.take(16)?.replace("T", " ") ?: "Unknown date"}",
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(

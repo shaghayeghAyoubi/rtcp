@@ -6,6 +6,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -16,7 +17,9 @@ import androidx.lifecycle.lifecycleScope
 import com.example.myapplication.data.datasource.local.NotificationFilterLocalDataSource
 import com.example.myapplication.domain.model.FaceRecognitionMessage
 import com.example.myapplication.domain.model.NotificationFilter
+import com.google.gson.Gson
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -84,20 +87,19 @@ class WebSocketForegroundService : LifecycleService() {
 
     private fun startCollectingMessages() {
         serviceScope.launch {
-            // Collect both filter + messages
-            launch {
-                webSocketManager.messages.collect { list ->
+            // Combine filter and messages -> react whenever either changes
+            combine(
+                notificationFilterLocalDataSource.getFilter(),
+                webSocketManager.messages
+            ) { filter, messages -> filter to messages }
+                .collect { (filter, list) ->
                     if (list.isNotEmpty()) {
                         val latest = list.last()
 
-                        // Get current filter from DataStore
-                        val filter = notificationFilterLocalDataSource.getFilter().first()
-
-                        // Apply filter logic
                         val shouldNotify = when (filter) {
                             NotificationFilter.ALL -> true
                             NotificationFilter.ONLY_OK -> latest.message == "OK"
-                            NotificationFilter.ONLY_FORBIDDEN -> latest.message == "ERROR"
+                            NotificationFilter.ONLY_FORBIDDEN -> latest.message == "ONLY_FORBIDDEN"
                         }
 
                         if (shouldNotify) {
@@ -105,7 +107,6 @@ class WebSocketForegroundService : LifecycleService() {
                         }
                     }
                 }
-            }
         }
     }
 
@@ -114,11 +115,12 @@ class WebSocketForegroundService : LifecycleService() {
 
         val intent = Intent(this, MainActivity::class.java).apply {
             putExtra("open_screen", "messages")
+            putExtra("message_data", Gson().toJson(msg)) // ✅ خود پیام رو هم به صورت JSON بفرست
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0,
+            msg.nearestNeighbourId.hashCode(), // هر نوتیفیکیشن یه request code منحصر‌به‌فرد داشته باشه
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
@@ -192,4 +194,6 @@ class WebSocketForegroundService : LifecycleService() {
         }
         super.onDestroy()
     }
+
+
 }
