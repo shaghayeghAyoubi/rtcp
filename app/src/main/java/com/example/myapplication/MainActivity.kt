@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
@@ -14,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -24,15 +26,17 @@ import androidx.navigation.navArgument
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource.Companion.SideEffect
+import androidx.navigation.NavHostController
 import com.example.myapplication.domain.repository.TokenRepository
 import com.example.myapplication.presentation.AppNavHost
 
 // Replace these imports with your real classes / package paths
-import com.example.myapplication.presentation.MainNavHost
 import com.example.myapplication.presentation.event.WebSocketMessageScreen
 import com.example.myapplication.presentation.login.LoginScreen
 import kotlinx.coroutines.delay
@@ -172,49 +176,51 @@ import kotlinx.coroutines.flow.map
 //    }
 //}
 
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject
-    lateinit var webSocketManager: WebSocketManager
+    @Inject lateinit var webSocketManager: WebSocketManager
 
-    // intent فعلی را در state نگه می‌داریم تا Compose از آن باخبر شود
-    private val _currentIntent = mutableStateOf<Intent?>(null)
-    private val currentIntent: State<Intent?> get() = _currentIntent
-
-    // برای نوتیفیکیشن در Android 13+
-    private val requestNotificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
+    // store navController so onNewIntent can call handleDeepLink
+    private val navControllerHolder = mutableStateOf<NavHostController?>(null)
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         requestNotificationPermissionIfNeeded()
         startWebSocketForegroundService()
 
-        // مقدار اولیه intent
-        _currentIntent.value = intent
-
         setContent {
             MaterialTheme {
+                val navController = rememberNavController()
+                // store it to the holder so onNewIntent can use it
+                SideEffect { navControllerHolder.value = navController }
+
                 AppNavHost(
+
                     webSocketManager = webSocketManager,
-                    currentIntent = currentIntent,
                     stopWebSocketService = { stopWebSocketForegroundService() }
                 )
             }
         }
+
+        // Also handle a cold start deep link (app killed -> user taps notification)
+        intent?.let { navControllerHolder.value?.handleDeepLink(it) }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        Log.d("MainActivity", "onNewIntent: ${intent?.data}")
+        // If compose created navController and stored it, let it handle the deep link
+        navControllerHolder.value?.handleDeepLink(intent)
+    }
     private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val hasPermission =
-                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                        PackageManager.PERMISSION_GRANTED
-            if (!hasPermission) {
-                requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+                .launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
@@ -230,12 +236,6 @@ class MainActivity : ComponentActivity() {
             action = WebSocketForegroundService.ACTION_STOP
         }
         startService(stopIntent)
-    }
-
-    // وقتی اپ از نوتیفیکیشن باز شد
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        _currentIntent.value = intent
     }
 }
 

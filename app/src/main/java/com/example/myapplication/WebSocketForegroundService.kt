@@ -9,7 +9,9 @@ import android.app.PendingIntent
 import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
@@ -22,6 +24,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
 import javax.inject.Inject
 
 
@@ -111,34 +114,43 @@ class WebSocketForegroundService : LifecycleService() {
     }
 
     private fun postIncomingMessageNotification(msg: FaceRecognitionMessage) {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val intent = Intent(this, MainActivity::class.java).apply {
-            putExtra("open_screen", "messages")
-            putExtra("message_data", Gson().toJson(msg)) // ✅ خود پیام رو هم به صورت JSON بفرست
-            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        // JSON encode and URI-safe encode
+        val rawJson = Gson().toJson(msg)
+        val encoded = URLEncoder.encode(rawJson, "UTF-8") // safe for query param
+
+        // Use custom scheme (myapp://messages?msg=...)
+        val deepLinkUri = Uri.parse("myapp://messages?msg=$encoded")
+
+        // Explicit intent targeted at MainActivity so stack building works
+        val deepLinkIntent = Intent(Intent.ACTION_VIEW, deepLinkUri, this, MainActivity::class.java).apply {
+            // Flags: NEW_TASK since started from Service, SINGLE_TOP/CLEAR_TOP to reuse existing Activity
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            msg.nearestNeighbourId.hashCode(), // هر نوتیفیکیشن یه request code منحصر‌به‌فرد داشته باشه
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
 
-        // unique id per notification if you want multiple
-        val notifId = System.currentTimeMillis().toInt()
+        val pendingIntent = TaskStackBuilder.create(this).run {
+            // Ensures proper back stack so back button behaves sensibly
+            addNextIntentWithParentStack(deepLinkIntent)
+            getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }
 
         val notification = NotificationCompat.Builder(this, MESSAGE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Face recognition alert")
             .setContentText("Forbidden event detected")
-            .setSmallIcon(R.drawable.ic_notification) // replace with your icon
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
-        notificationManager.notify(notifId, notification)
+        notificationManager.notify(System.currentTimeMillis().toInt(), notification)
     }
+
+
+
+
 
     private fun buildForegroundNotification(): Notification {
         val contentIntent = Intent(this, MainActivity::class.java).let { intent ->

@@ -177,7 +177,7 @@ import com.example.yourapp.presentation.login.LoginViewModel
 //}
 
 @Composable
-fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hiltViewModel(),) {
+fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hiltViewModel(),    onLoginSuccess: () -> Unit) {
     val username = viewModel.username
     val password = viewModel.password
     val loginState = viewModel.loginState
@@ -186,9 +186,7 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
     var showSettingsDialog by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         viewModel.navigateToCameraList.collect {
-            navController.navigate("main") {
-                popUpTo("login") { inclusive = true } // Optional: clear back stack
-            }
+            onLoginSuccess()
         }
     }
     Box(
