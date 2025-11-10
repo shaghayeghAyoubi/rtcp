@@ -10,11 +10,12 @@ data class RecognizedPersonDto(
     val id: Long,
     val camera: RecognizedPersonCameraDto,
     val croppedFace: String,
-    val recognizedDate: String,
+    val recognizedDate: String ? ,
     val nearestNeighbourSimilarity: Double
 )
 
+// 👇 make fields nullable — because API might send them as null
 data class RecognizedPersonCameraDto(
-    val id: Long,
-    val title: String
+    val id: Long?,
+    val title: String?
 )

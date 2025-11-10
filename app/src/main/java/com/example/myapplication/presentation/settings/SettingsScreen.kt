@@ -39,7 +39,7 @@ fun SettingsScreen(
     val baseUrlFlow = settingsViewModel.baseUrl
     val baseUrlFromStore by baseUrlFlow.collectAsState(initial = null)
 
-    val baseUrl = baseUrlFromStore ?: "http://172.15.0.60:7009/"
+    val baseUrl = baseUrlFromStore ?: "http://172.15.0.40:7009/"
 
 
 

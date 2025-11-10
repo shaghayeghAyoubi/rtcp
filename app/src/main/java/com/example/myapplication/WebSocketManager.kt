@@ -352,7 +352,7 @@ class WebSocketManager @Inject constructor(
      */
     private fun connectInternal(token: String) {
         try {
-            val url = "ws://172.15.0.60:7009/face-recognize?token=$token"
+            val url = "ws://172.15.0.40:7009/face-recognize?token=$token"
             Log.d(TAG, "🔌 Connecting with URL: $url")
 
             stompClient = Stomp.over(Stomp.ConnectionProvider.OKHTTP, url).apply {
@@ -396,7 +396,8 @@ class WebSocketManager @Inject constructor(
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ message ->
                         try {
-                            val dto = Json.decodeFromString<FaceRecognitionMessageDto>(message.payload)
+                            val json = Json { ignoreUnknownKeys = true } // ✅ Safe against unknown fields
+                            val dto = json.decodeFromString<FaceRecognitionMessageDto>(message.payload)
                             val domainMessage = dto.toDomain()
                             _messages.update { it + domainMessage }
 

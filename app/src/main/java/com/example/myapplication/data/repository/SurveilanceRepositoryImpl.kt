@@ -24,7 +24,7 @@ class SurveillanceRepositoryImpl @Inject constructor(
 
     private suspend fun getApi(): SurveillanceApi {
         val baseUrl = baseUrlRepository.getBaseUrl().firstOrNull()
-            ?: "http://172.15.0.60:7009/"
+            ?: "http://172.15.0.40:7009/"
         return retrofitFactory.create(baseUrl).create(SurveillanceApi::class.java)
     }
 

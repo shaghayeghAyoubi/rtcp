@@ -9,8 +9,8 @@ import com.example.myapplication.domain.model.RecognizedPerson
 
 fun RecognizedPersonCameraDto.toDomain(): CameraRecognized {
     return CameraRecognized(
-        id = id,
-        title = title
+        id = id ?: -1L,                // provide safe default
+        title = title ?: "Unknown"     // avoid null crash
     )
 }
 
@@ -19,7 +19,7 @@ fun RecognizedPersonDto.toDomain(): RecognizedPerson {
         id = id,
         camera = camera.toDomain(),
         croppedFaceUrl = croppedFace,
-        recognizedDate = recognizedDate,
+        recognizedDate = recognizedDate ?: "Unknown Date",
         similarity = nearestNeighbourSimilarity
     )
 }

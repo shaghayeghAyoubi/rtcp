@@ -4,13 +4,13 @@ import com.example.myapplication.data.model.FaceRecognitionMessageDto
 import com.example.myapplication.domain.model.FaceRecognitionMessage
 
 
-fun FaceRecognitionMessageDto.toDomain():  FaceRecognitionMessage = FaceRecognitionMessage(
+fun FaceRecognitionMessageDto.toDomain(): FaceRecognitionMessage = FaceRecognitionMessage(
     message = message,
     cameraTitle = cameraTitle,
+    cameraId = cameraId, // ✅ include this
     createdDate = createdDate,
-    croppedFace = croppedFace,
+    croppedFace = croppedFace ?: "",
     nearestNeighbourBiometricId = nearestNeighbourBiometricId,
     nearestNeighbourId = nearestNeighbourId,
-    nearestNeighbourSimilarity = nearestNeighbourSimilarity,
-
+    nearestNeighbourSimilarity = nearestNeighbourSimilarity
 )

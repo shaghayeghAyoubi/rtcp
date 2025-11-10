@@ -41,7 +41,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.example.myapplication.R
-import com.example.myapplication.presentation.navigation.Screen
 import com.example.myapplication.presentation.settings.SettingsScreen
 import com.example.yourapp.presentation.login.LoginViewModel
 
@@ -177,7 +176,7 @@ import com.example.yourapp.presentation.login.LoginViewModel
 //}
 
 @Composable
-fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hiltViewModel(),    onLoginSuccess: () -> Unit) {
+fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hiltViewModel(),) {
     val username = viewModel.username
     val password = viewModel.password
     val loginState = viewModel.loginState
@@ -186,7 +185,9 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
     var showSettingsDialog by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         viewModel.navigateToCameraList.collect {
-            onLoginSuccess()
+            navController.navigate("main") {
+                popUpTo("login") { inclusive = true } // Optional: clear back stack
+            }
         }
     }
     Box(
