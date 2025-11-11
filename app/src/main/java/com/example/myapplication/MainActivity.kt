@@ -1,19 +1,27 @@
 package com.example.myapplication // <-- replace with your actual package
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -159,7 +167,6 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var webSocketManager: WebSocketManager
 
-    // Permission launcher for Android 13+ notification permission
     private val requestNotificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
 
@@ -167,25 +174,54 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Request POST_NOTIFICATIONS on Android 13+
         requestNotificationPermissionIfNeeded()
-
-        // Start the foreground service which will in turn call webSocketManager.connectAsync()
         startWebSocketForegroundService()
+
+        // Handle initial deep link
+        handleDeepLinkIntent(intent)
 
         setContent {
             MaterialTheme {
-                // Pass the injected manager + initial intent to the nav host
                 AppNavHost(webSocketManager = webSocketManager, initialIntent = intent)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Update the current intent
+        setIntent(intent)
+        // Handle the new deep link
+        handleDeepLinkIntent(intent)
+    }
+
+    private fun handleDeepLinkIntent(intent: Intent?) {
+        val data = intent?.data
+        if (data != null && "myapp" == data.scheme && data.host == "event") {
+            val messageId = data.getQueryParameter("messageId")
+            if (messageId != null) {
+                SharedNavigationManager.setPendingMessageId(messageId)
+                // Force the app to handle the navigation
+                handleNotificationNavigation()
+            }
+        }
+    }
+
+    private fun handleNotificationNavigation() {
+        // This will be handled by the composables observing the state
+        // We've already set the pending message ID, now the navigation should happen automatically
+    }
+
+    private fun isUserLoggedIn(): Boolean {
+        val sharedPreferences = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        return sharedPreferences.getBoolean("is_logged_in", false)
     }
 
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val hasPermission =
                 checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                        android.content.pm.PackageManager.PERMISSION_GRANTED
+                        PackageManager.PERMISSION_GRANTED
             if (!hasPermission) {
                 requestNotificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -207,12 +243,6 @@ class MainActivity : ComponentActivity() {
         startService(stopIntent)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        // keep the intent so composables can read extras (we forward to MainNavHost)
-        setIntent(intent)
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         // Foreground service manages websocket lifecycle. If you want to disconnect here, do it intentionally:
@@ -229,26 +259,40 @@ class MainActivity : ComponentActivity() {
         initialIntent: Intent? = null
     ) {
         val navController = rememberNavController()
+        val context = LocalContext.current
+
+        // Check login status without using composable functions in LaunchedEffect
+        val isLoggedIn = remember {
+            val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            sharedPreferences.getBoolean("is_logged_in", false)
+        }
+
+        // Handle navigation when we have a pending message and user is logged in
+        LaunchedEffect(SharedNavigationManager.pendingMessageId) {
+            if (isLoggedIn && SharedNavigationManager.hasPendingNavigation()) {
+                // Navigate to main which will handle the event screen navigation
+                navController.navigate("main") {
+                    popUpTo("login") { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        }
 
         NavHost(
             navController = navController,
-            startDestination = "login"
+            startDestination = if (isLoggedIn) "main" else "login"
         ) {
-            // keep your existing LoginScreen signature (you're already using LoginScreen(navController) in old code)
-            // LoginScreen should navigate to "main" when login succeeds (see snippet below).
             composable("login") {
-                LoginScreen(navController = navController)
+                LoginScreen(
+                    navController = navController,
+                    initialIntent = initialIntent
+                )
             }
 
-            // After login, go to "main" which hosts bottom navigation
             composable("main") {
                 MainNavHost(
                     webSocketManager = webSocketManager,
-                    initialIntent = initialIntent,
                     onLogout = {
-                        // Called from inside MainNavHost when user logs out:
-                        // - stop foreground service if you want
-                        // - go back to login and clear backstack
                         stopWebSocketForegroundService()
                         navController.navigate("login") {
                             popUpTo("main") { inclusive = true }
@@ -257,5 +301,13 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    @Composable
+    private fun isUserLoggedIn(context: Context): Boolean {
+        val sharedPreferences = remember {
+            context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        }
+        return sharedPreferences.getBoolean("is_logged_in", false)
     }
 }

@@ -26,17 +26,61 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.myapplication.SharedNavigationManager
 import com.example.myapplication.WebSocketManager
+import com.example.myapplication.domain.model.FaceRecognitionMessage
 import com.example.myapplication.domain.model.RecognizedPerson
 import com.example.myapplication.presentation.dashboard.CameraListViewModel
+import kotlinx.coroutines.delay
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WebSocketMessageScreen(webSocketManager: WebSocketManager,  viewModel: CameraListViewModel = hiltViewModel()) {
+fun WebSocketMessageScreen(
+    webSocketManager: WebSocketManager,
+    messageId: String? = null,
+    viewModel: CameraListViewModel = hiltViewModel()
+) {
     val messages by webSocketManager.messages.collectAsState()
     val recognizedPeopleState = viewModel.recognizedPeopleState.collectAsState().value
     val context = LocalContext.current
+
+    var selectedMessage by remember { mutableStateOf<FaceRecognitionMessage?>(null) }
+    var hasProcessedPendingMessage by remember { mutableStateOf(false) }
+
+    // Handle opening dialog from notification
+    LaunchedEffect(messageId, messages) {
+        if (!messageId.isNullOrEmpty() && !hasProcessedPendingMessage) {
+            val message = messages.find { it.nearestNeighbourId == messageId }
+            if (message != null) {
+                selectedMessage = message
+                hasProcessedPendingMessage = true
+            } else {
+                delay(500)
+                val retryMessage = messages.find { it.nearestNeighbourId == messageId }
+                if (retryMessage != null) {
+                    selectedMessage = retryMessage
+                    hasProcessedPendingMessage = true
+                }
+            }
+        }
+    }
+
+    // Reset processed flag when messageId changes
+    LaunchedEffect(messageId) {
+        if (!messageId.isNullOrEmpty()) {
+            hasProcessedPendingMessage = false
+        }
+    }
+
+    // Clear the pending message ID once we've successfully shown the dialog
+    LaunchedEffect(selectedMessage) {
+        if (selectedMessage != null && messageId != null) {
+            // Clear the pending navigation after a short delay to ensure dialog is shown
+            delay(1000)
+            SharedNavigationManager.consumePendingMessageId() // This clears it
+        }
+    }
 
     Scaffold { paddingValues ->
         Column(
@@ -54,7 +98,6 @@ fun WebSocketMessageScreen(webSocketManager: WebSocketManager,  viewModel: Camer
                         recognizedPeopleState.isLoading -> {
                             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                         }
-
                         recognizedPeopleState.error != null -> {
                             Text(
                                 text = "Error: ${recognizedPeopleState.error}",
@@ -62,7 +105,6 @@ fun WebSocketMessageScreen(webSocketManager: WebSocketManager,  viewModel: Camer
                                 color = MaterialTheme.colorScheme.error
                             )
                         }
-
                         else -> {
                             RecognizedPeopleList(
                                 recognizedPeople = recognizedPeopleState.recognizedPeople
@@ -71,7 +113,6 @@ fun WebSocketMessageScreen(webSocketManager: WebSocketManager,  viewModel: Camer
                     }
                 }
 
-                // --- Messages section ---
                 if (messages.isEmpty()) {
                     item {
                         Text(
@@ -80,28 +121,22 @@ fun WebSocketMessageScreen(webSocketManager: WebSocketManager,  viewModel: Camer
                             modifier = Modifier.padding(8.dp)
                         )
                     }
-                }else {
-
+                } else {
                     items(messages) { message ->
-
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedMessage = message
+                                    hasProcessedPendingMessage = true
+                                },
                             elevation = CardDefaults.cardElevation(4.dp)
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    "🕒 Time: ${message.createdDate}",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    "💬 Message: ${message.message}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                                Text("🕒 Time: ${message.createdDate}", style = MaterialTheme.typography.bodySmall)
+                                Text("💬 Message: ${message.message}", style = MaterialTheme.typography.bodyMedium)
                                 message.nearestNeighbourSimilarity?.let {
-                                    Text(
-                                        "🔍 Similarity: $it%",
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
+                                    Text("🔍 Similarity: $it%", style = MaterialTheme.typography.bodySmall)
                                 }
                                 message.croppedFace?.let { base64 ->
                                     base64ToBitmap(base64)?.let { bitmap ->
@@ -119,13 +154,54 @@ fun WebSocketMessageScreen(webSocketManager: WebSocketManager,  viewModel: Camer
                             }
                         }
                     }
-
-
                 }
             }
         }
     }
+
+    // Dialog
+    selectedMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = {
+                selectedMessage = null
+                hasProcessedPendingMessage = false
+            },
+            title = { Text("Message Details") },
+            text = {
+                Column {
+                    Text("🕒 Time: ${message.createdDate}")
+                    Text("💬 Message: ${message.message}")
+                    message.nearestNeighbourSimilarity?.let {
+                        Text("🔍 Similarity: $it%")
+                    }
+                    message.croppedFace?.let { base64 ->
+                        base64ToBitmap(base64)?.let { bitmap ->
+                            Image(
+                                painter = BitmapPainter(bitmap.asImageBitmap()),
+                                contentDescription = "Cropped Face",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                                    .padding(top = 8.dp),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedMessage = null
+                    hasProcessedPendingMessage = false
+                }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
 }
+
+
 
 @Composable
 fun RecognizedPeopleList(recognizedPeople: List<RecognizedPerson>) {

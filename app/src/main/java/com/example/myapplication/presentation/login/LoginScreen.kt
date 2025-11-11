@@ -13,6 +13,7 @@ package com.example.myapplication.presentation.login
 //import androidx.hilt.navigation.compose.hiltViewModel
 //import com.example.myapplication.presentation.dashboard.CameraListViewModel
 //import com.example.yourapp.presentation.login.LoginViewModel
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -40,7 +41,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
+import com.example.myapplication.MainActivityViewModel
 import com.example.myapplication.R
+import com.example.myapplication.SharedNavigationManager
 import com.example.myapplication.presentation.settings.SettingsScreen
 import com.example.yourapp.presentation.login.LoginViewModel
 
@@ -176,33 +179,59 @@ import com.example.yourapp.presentation.login.LoginViewModel
 //}
 
 @Composable
-fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hiltViewModel(),) {
+fun LoginScreen(
+    navController: NavHostController,
+    initialIntent: Intent? = null,
+    viewModel: LoginViewModel = hiltViewModel()
+) {
     val username = viewModel.username
     val password = viewModel.password
-    val loginState = viewModel.loginState
-
     var passwordVisible by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        viewModel.navigateToCameraList.collect {
-            navController.navigate("main") {
-                popUpTo("login") { inclusive = true } // Optional: clear back stack
+
+    // Handle initial intent when login screen is created
+    LaunchedEffect(initialIntent) {
+        // Check if app was launched from notification
+        val data = initialIntent?.data
+        if (data != null && "myapp" == data.scheme && data.host == "event") {
+            val messageId = data.getQueryParameter("messageId")
+            if (messageId != null) {
+                SharedNavigationManager.setPendingMessageId(messageId)
             }
         }
     }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        // Background image
+
+    // Handle navigation after successful login
+    LaunchedEffect(viewModel.navigateToCameraList) {
+        viewModel.navigateToCameraList.collect {
+            // Check if we have pending navigation from notification
+            val pendingMessageId = SharedNavigationManager.consumePendingMessageId()
+
+            if (pendingMessageId != null) {
+                // Navigate directly to main which will handle the event screen navigation
+                navController.navigate("main") {
+                    popUpTo("login") { inclusive = true }
+                    launchSingleTop = true
+                }
+            } else {
+                // Normal login flow
+                navController.navigate("main") {
+                    popUpTo("login") { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
+    // --- UI unchanged ---
+    Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(id = R.drawable.login_bg), // replace with your image
+            painter = painterResource(id = R.drawable.login_bg),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
 
-        // Login Card
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -212,7 +241,6 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Sign in to your account", fontSize = 20.sp)
-
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
@@ -251,6 +279,7 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
                     textAlign = TextAlign.Center
                 )
             }
+
             Button(
                 onClick = { viewModel.login() },
                 modifier = Modifier.fillMaxWidth()
@@ -262,15 +291,13 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
 
             when (val state = viewModel.loginState) {
                 is LoginState.Loading -> CircularProgressIndicator()
-                is LoginState.Success -> {
-                    Text("Welcome")
-                    Text("Refresh Token")
-                }
+                is LoginState.Success -> Text("Welcome")
                 is LoginState.Error -> Text("Login Failed: ${state.message}", color = Color.Red)
                 LoginState.Idle -> {}
             }
         }
     }
+
     if (showSettingsDialog) {
         Dialog(onDismissRequest = { showSettingsDialog = false }) {
             Surface(
@@ -283,7 +310,7 @@ fun LoginScreen( navController: NavHostController,viewModel: LoginViewModel = hi
                 SettingsScreen(
                     localizationViewModel = hiltViewModel(),
                     settingsViewModel = hiltViewModel(),
-                    isDialog = true, // 👈 tell it’s inside dialog
+                    isDialog = true,
                     onSave = { showSettingsDialog = false }
                 )
             }

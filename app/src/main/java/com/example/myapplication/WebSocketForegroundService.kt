@@ -11,6 +11,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.example.myapplication.data.datasource.local.NotificationFilterLocalDataSource
@@ -112,24 +113,26 @@ class WebSocketForegroundService : LifecycleService() {
     private fun postIncomingMessageNotification(msg: FaceRecognitionMessage) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        val intent = Intent(this, MainActivity::class.java).apply {
-            putExtra("open_screen", "messages")
+        // Create deep link that navigates to Event screen with message ID
+        val deepLinkUri = "myapp://event?messageId=${msg.nearestNeighbourId}".toUri()
+
+        val intent = Intent(Intent.ACTION_VIEW, deepLinkUri, this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
+
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0,
+            msg.nearestNeighbourId.hashCode(),
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // unique id per notification if you want multiple
-        val notifId = System.currentTimeMillis().toInt()
+        val notifId = msg.nearestNeighbourId.hashCode()
 
         val notification = NotificationCompat.Builder(this, MESSAGE_CHANNEL_ID)
             .setContentTitle("Face recognition alert")
             .setContentText("Forbidden event detected")
-            .setSmallIcon(R.drawable.ic_notification) // replace with your icon
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

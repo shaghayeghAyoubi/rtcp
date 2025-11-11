@@ -1,23 +1,22 @@
 package com.example.myapplication
 
+import androidx.compose.runtime.mutableStateOf
+
+// SharedNavigationManager.kt
 // SharedNavigationManager.kt
 object SharedNavigationManager {
-    private var pendingMessageId: String? = null
-    private var shouldOpenDialog: Boolean = false
+    private var _pendingMessageId = mutableStateOf<String?>(null)
+    val pendingMessageId: String? get() = _pendingMessageId.value
 
-    fun setPendingNavigation(messageId: String, openDialog: Boolean = true) {
-        pendingMessageId = messageId
-        shouldOpenDialog = openDialog
+    fun setPendingMessageId(messageId: String) {
+        _pendingMessageId.value = messageId
     }
 
-    fun getPendingNavigation(): Pair<String?, Boolean> {
-        return Pair(pendingMessageId, shouldOpenDialog).also {
-            pendingMessageId = null
-            shouldOpenDialog = false
-        }
+    fun consumePendingMessageId(): String? {
+        return _pendingMessageId.value.also { _pendingMessageId.value = null }
     }
 
     fun hasPendingNavigation(): Boolean {
-        return pendingMessageId != null
+        return _pendingMessageId.value != null
     }
 }
