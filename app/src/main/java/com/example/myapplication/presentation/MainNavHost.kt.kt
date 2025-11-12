@@ -26,6 +26,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
+import com.example.myapplication.AuthStateManager
 import com.example.myapplication.MainActivityViewModel
 import com.example.myapplication.SharedNavigationManager
 import com.example.myapplication.WebSocketManager
@@ -55,7 +56,6 @@ fun MainNavHost(
         if (pendingMessageId != null) {
             // Navigate to Event screen
             navController.navigate(Screen.Event.route) {
-                // Clear the back stack to avoid multiple instances
                 popUpTo(navController.graph.startDestinationId) {
                     saveState = true
                 }
@@ -93,7 +93,7 @@ fun MainNavHost(
             startDestination = Screen.Dashboard.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable(Screen.Event.route) { backStackEntry ->
+            composable(Screen.Event.route) {
                 // Get the pending message ID for the dialog
                 val currentPendingMessageId = SharedNavigationManager.pendingMessageId
 

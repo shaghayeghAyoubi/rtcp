@@ -14,6 +14,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -167,6 +169,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var webSocketManager: WebSocketManager
 
+    @Inject
+    lateinit var authStateManager: AuthStateManager
+
     private val requestNotificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
 
@@ -182,16 +187,18 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MaterialTheme {
-                AppNavHost(webSocketManager = webSocketManager, initialIntent = intent)
+                AppNavHost(
+                    webSocketManager = webSocketManager,
+                    initialIntent = intent,
+                    authStateManager = authStateManager
+                )
             }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // Update the current intent
         setIntent(intent)
-        // Handle the new deep link
         handleDeepLinkIntent(intent)
     }
 
@@ -201,8 +208,6 @@ class MainActivity : ComponentActivity() {
             val messageId = data.getQueryParameter("messageId")
             if (messageId != null) {
                 SharedNavigationManager.setPendingMessageId(messageId)
-                // Force the app to handle the navigation
-                handleNotificationNavigation()
             }
         }
     }
@@ -256,20 +261,31 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun AppNavHost(
         webSocketManager: WebSocketManager,
-        initialIntent: Intent? = null
+        initialIntent: Intent? = null,
+        authStateManager: AuthStateManager
     ) {
         val navController = rememberNavController()
         val context = LocalContext.current
 
-        // Check login status without using composable functions in LaunchedEffect
-        val isLoggedIn = remember {
-            val sharedPreferences = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
-            sharedPreferences.getBoolean("is_logged_in", false)
+        // Observe login state
+        val isLoggedIn by authStateManager.getLoginState().collectAsState(initial = false)
+
+        // Handle initial deep link when app starts
+        LaunchedEffect(initialIntent) {
+            // Check if app was launched from notification
+            val data = initialIntent?.data
+            if (data != null && "myapp" == data.scheme && data.host == "event") {
+                val messageId = data.getQueryParameter("messageId")
+                if (messageId != null) {
+                    SharedNavigationManager.setPendingMessageId(messageId)
+                }
+            }
         }
 
-        // Handle navigation when we have a pending message and user is logged in
-        LaunchedEffect(SharedNavigationManager.pendingMessageId) {
+        // Handle navigation when login state changes AND we have pending notification
+        LaunchedEffect(isLoggedIn) {
             if (isLoggedIn && SharedNavigationManager.hasPendingNavigation()) {
+                // User just logged in and we have a pending notification
                 // Navigate to main which will handle the event screen navigation
                 navController.navigate("main") {
                     popUpTo("login") { inclusive = true }
@@ -285,7 +301,8 @@ class MainActivity : ComponentActivity() {
             composable("login") {
                 LoginScreen(
                     navController = navController,
-                    initialIntent = initialIntent
+                    initialIntent = initialIntent,
+                    authStateManager = authStateManager
                 )
             }
 

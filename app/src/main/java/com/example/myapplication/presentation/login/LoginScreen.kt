@@ -41,7 +41,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
-import com.example.myapplication.MainActivityViewModel
+import com.example.myapplication.AuthStateManager
+
 import com.example.myapplication.R
 import com.example.myapplication.SharedNavigationManager
 import com.example.myapplication.presentation.settings.SettingsScreen
@@ -182,6 +183,7 @@ import com.example.yourapp.presentation.login.LoginViewModel
 fun LoginScreen(
     navController: NavHostController,
     initialIntent: Intent? = null,
+    authStateManager: AuthStateManager,
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val username = viewModel.username
@@ -205,10 +207,8 @@ fun LoginScreen(
     LaunchedEffect(viewModel.navigateToCameraList) {
         viewModel.navigateToCameraList.collect {
             // Check if we have pending navigation from notification
-            val pendingMessageId = SharedNavigationManager.consumePendingMessageId()
-
-            if (pendingMessageId != null) {
-                // Navigate directly to main which will handle the event screen navigation
+            if (SharedNavigationManager.hasPendingNavigation()) {
+                // We have a pending notification - MainNavHost will handle the navigation
                 navController.navigate("main") {
                     popUpTo("login") { inclusive = true }
                     launchSingleTop = true
@@ -223,7 +223,7 @@ fun LoginScreen(
         }
     }
 
-    // --- UI unchanged ---
+    // Your existing UI code remains the same
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.login_bg),

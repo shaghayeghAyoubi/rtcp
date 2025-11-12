@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.example.myapplication.AuthStateManager
 import com.example.myapplication.data.datasource.local.LanguageLocalDataSource
 import com.example.myapplication.data.datasource.local.NotificationFilterLocalDataSource
 import com.example.myapplication.data.repository.BaseUrlRepositoryImpl
@@ -53,5 +54,11 @@ object DataStoreModule {
         dataStore: DataStore<Preferences>
     ): BaseUrlRepository {
         return BaseUrlRepositoryImpl(dataStore)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthStateManager(tokenRepository: TokenRepository): AuthStateManager {
+        return AuthStateManager(tokenRepository)
     }
 }
