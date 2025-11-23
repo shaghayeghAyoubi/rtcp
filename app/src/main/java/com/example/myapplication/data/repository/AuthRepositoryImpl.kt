@@ -22,7 +22,7 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(request: LoginRequest): LoginResponse {
         val baseUrl = baseUrlRepository.getBaseUrl().firstOrNull()
-            ?: "http://172.15.0.60:7009/"
+            ?: "http://172.15.0.40:7009/"
 
         val api = retrofitFactory.create(baseUrl).create(AuthApi::class.java)
 

@@ -5,7 +5,12 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -17,7 +22,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -64,7 +74,12 @@ fun MainNavHost(
             }
         }
     }
-
+    // Define Nolan gradient Brush
+    val nolanGradient = Brush.linearGradient(
+        colors = listOf(Color(0xFFFF00FF), Color(0xFF00E5FF)),
+        start = Offset(0f, 0f),
+        end = Offset(100f, 100f)
+    )
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -72,8 +87,21 @@ fun MainNavHost(
                 val currentRoute = navBackStackEntry?.destination?.route
 
                 items.forEach { screen ->
+// Usage in NavigationBarItem
                     NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.title(strings)) },
+                        icon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp) // slightly bigger to show gradient background
+                                    .background(nolanGradient, shape = RoundedCornerShape(8.dp)),
+                            ) {
+                                Image(
+                                    painter = painterResource(id = screen.iconRes),
+                                    contentDescription = screen.title(strings),
+                                    modifier = Modifier.size(24.dp) // icon size inside gradient box
+                                )
+                            }
+                        },
                         label = { Text(screen.title(strings)) },
                         selected = currentRoute == screen.route,
                         onClick = {

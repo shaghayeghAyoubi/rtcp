@@ -46,6 +46,7 @@ import com.example.myapplication.AuthStateManager
 import com.example.myapplication.R
 import com.example.myapplication.SharedNavigationManager
 import com.example.myapplication.presentation.settings.SettingsScreen
+import com.example.myapplication.utils.NolanButton
 import com.example.yourapp.presentation.login.LoginViewModel
 
 
@@ -280,12 +281,11 @@ fun LoginScreen(
                 )
             }
 
-            Button(
-                onClick = { viewModel.login() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Sign In")
-            }
+            NolanButton(
+                text = "Sign In",
+                onClick = { viewModel.login() }
+            )
+
 
             Spacer(modifier = Modifier.height(8.dp))
 
