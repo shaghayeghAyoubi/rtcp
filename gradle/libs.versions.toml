@@ -25,6 +25,9 @@ daggerHilt = "2.57.2"
 gson = "2.10.1"
 uiGraphics = "1.9.5"
 foundation = "1.9.5"
+animationCore = "1.9.5"
+runtime = "1.9.5"
+material3 = "1.4.0"
 
 
 [libraries]
@@ -61,6 +64,9 @@ androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtim
 androidx-lifecycle-service = { group = "androidx.lifecycle", name = "lifecycle-service", version.ref = "lifecycleService" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
+androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
+androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

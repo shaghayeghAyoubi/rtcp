@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -21,12 +20,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.myapplication.presentation.localization.LanguageSwitcher
 import com.example.myapplication.presentation.localization.LocalizationViewModel
+import com.example.myapplication.presentation.components.NolanButton
 
 @Composable
 fun SettingsScreen(
@@ -126,15 +125,17 @@ fun SettingsScreen(
             }
         }
 
-        Button(
+        NolanButton(
+            text = "Save",
             onClick = {
                 val finalUrl = "http://$ip:$port/"
                 settingsViewModel.saveBaseUrl(finalUrl)
-                onSave?.invoke() // 👈 trigger callback if provided
+                onSave?.invoke()
             },
-            modifier = if (isDialog) Modifier.align(Alignment.CenterHorizontally) else Modifier.align(Alignment.Start)
-        ) {
-            Text("Save")
-        }
+            modifier = if (isDialog)
+                Modifier.align(Alignment.CenterHorizontally)
+            else
+                Modifier.align(Alignment.Start)
+        )
     }
 }

@@ -18,7 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+//import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,14 +43,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.myapplication.presentation.components.TopActionBar
 import com.example.myapplication.presentation.event.base64ToBitmap
 import com.example.myapplication.presentation.localization.LocalizationViewModel
 import com.example.myapplication.presentation.localization.strings.Strings
 import com.example.myapplication.presentation.localization.strings.StringsFa
+import com.example.myapplication.R
+import com.example.myapplication.presentation.components.AddPersonDialog
 import kotlinx.coroutines.flow.collect
 
 
@@ -63,6 +67,7 @@ fun RecognizedPeopleScreen(
     val state by viewModel.recognizedPeopleState.collectAsState()
     val listState = rememberLazyListState()
     val strings by localizationViewModel.strings.collectAsState()
+    var showAddPersonDialog by remember { mutableStateOf(false) }
 
     // Infinite scroll trigger
     LaunchedEffect(listState) {
@@ -73,6 +78,16 @@ fun RecognizedPeopleScreen(
                     viewModel.fetchNextPage()
                 }
             }
+    }
+
+    if (showAddPersonDialog) {
+        AddPersonDialog(
+            onDismiss = { showAddPersonDialog = false },
+            onFinish = { personData ->
+                // Save or send the created person
+                showAddPersonDialog = false
+            }
+        )
     }
 
     Scaffold { paddingValues ->
@@ -97,6 +112,16 @@ fun RecognizedPeopleScreen(
                         .fillMaxSize()
                         .padding(12.dp)
                 ) {
+                    stickyHeader {
+                        TopActionBar(
+                            title = strings.recognizedPeople,
+                            iconId = R.drawable.ic_add_user,  // Your PNG
+                            onAddClick = {
+                                showAddPersonDialog = true
+                            }
+                        )
+                    }
+
                     items(state.recognizedPeople) { person ->
                         RecognizedPersonItem(person, strings)
                     }
@@ -118,6 +143,12 @@ fun RecognizedPeopleScreen(
         }
     }
 }
+
+@Composable
+fun TopActionBar(strings: Strings, onAddClick: () -> Unit) {
+    TODO("Not yet implemented")
+}
+
 
 @Composable
 fun RecognizedPersonItem(person: RecognizedPerson, strings: Strings) {

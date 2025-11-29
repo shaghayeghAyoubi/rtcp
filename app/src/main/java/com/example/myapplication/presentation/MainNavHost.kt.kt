@@ -1,20 +1,12 @@
 package com.example.myapplication.presentation
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Intent
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 
-import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,28 +17,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import androidx.navigation.navDeepLink
-import com.example.myapplication.AuthStateManager
-import com.example.myapplication.MainActivityViewModel
 import com.example.myapplication.SharedNavigationManager
 import com.example.myapplication.WebSocketManager
 import com.example.myapplication.presentation.dashboard.CameraListScreen
 import com.example.myapplication.presentation.event.WebSocketMessageScreen
 import com.example.myapplication.presentation.localization.LocalizationViewModel
-import com.example.myapplication.presentation.localization.strings.Strings
 import com.example.myapplication.presentation.navigation.Screen
 import com.example.myapplication.presentation.recognized_poeple.RecognizedPeopleScreen
 import com.example.myapplication.presentation.settings.SettingsScreen
+import com.example.myapplication.presentation.components.GradientIcon
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -89,18 +73,14 @@ fun MainNavHost(
                 items.forEach { screen ->
 // Usage in NavigationBarItem
                     NavigationBarItem(
+                        colors = NavigationBarItemDefaults.colors(
+                            indicatorColor = Color.Transparent   // 🚫 Remove default halo
+                        ),
                         icon = {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp) // slightly bigger to show gradient background
-                                    .background(nolanGradient, shape = RoundedCornerShape(8.dp)),
-                            ) {
-                                Image(
-                                    painter = painterResource(id = screen.iconRes),
-                                    contentDescription = screen.title(strings),
-                                    modifier = Modifier.size(24.dp) // icon size inside gradient box
-                                )
-                            }
+                            GradientIcon(
+                                resId = screen.iconRes,
+                                selected = currentRoute == screen.route
+                            )
                         },
                         label = { Text(screen.title(strings)) },
                         selected = currentRoute == screen.route,

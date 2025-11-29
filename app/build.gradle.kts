@@ -91,6 +91,9 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.57.2")
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.compose.animation.core)
+    implementation(libs.androidx.compose.runtime)
+    implementation(libs.androidx.compose.material3)
     kapt("com.google.dagger:hilt-android-compiler:2.57.2")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 

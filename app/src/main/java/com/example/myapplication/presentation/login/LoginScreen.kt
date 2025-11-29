@@ -17,24 +17,22 @@ import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -46,7 +44,7 @@ import com.example.myapplication.AuthStateManager
 import com.example.myapplication.R
 import com.example.myapplication.SharedNavigationManager
 import com.example.myapplication.presentation.settings.SettingsScreen
-import com.example.myapplication.utils.NolanButton
+import com.example.myapplication.presentation.components.NolanButton
 import com.example.yourapp.presentation.login.LoginViewModel
 
 
@@ -191,6 +189,15 @@ fun LoginScreen(
     val password = viewModel.password
     var passwordVisible by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
+    val nolanGradient = Brush.linearGradient(
+        colors = listOf(Color(0xFFFF00FF), Color(0xFF00E5FF)),
+        start = Offset(0f, 0f),
+        end = Offset(300f, 300f)
+    )
+
+// Use the first color from your gradient
+    val gradientColor = Color(0xFF00E5FF)
+
 
     // Handle initial intent when login screen is created
     LaunchedEffect(initialIntent) {
@@ -248,7 +255,12 @@ fun LoginScreen(
                 value = username,
                 onValueChange = { viewModel.username = it },
                 label = { Text("Username") },
-                modifier = Modifier.fillMaxWidth()
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = gradientColor,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedLabelColor = gradientColor,
+                    cursorColor = gradientColor
+                )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -257,7 +269,12 @@ fun LoginScreen(
                 value = password,
                 onValueChange = { viewModel.password = it },
                 label = { Text("Password") },
-                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = gradientColor,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedLabelColor = gradientColor,
+                    cursorColor = gradientColor
+                ),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
                     val icon = if (passwordVisible) Icons.Filled.VisibilityOff else Icons.Filled.Visibility
@@ -283,6 +300,7 @@ fun LoginScreen(
 
             NolanButton(
                 text = "Sign In",
+                loading = viewModel.loginState is LoginState.Loading,
                 onClick = { viewModel.login() }
             )
 
@@ -290,10 +308,10 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             when (val state = viewModel.loginState) {
-                is LoginState.Loading -> CircularProgressIndicator()
                 is LoginState.Success -> Text("Welcome")
                 is LoginState.Error -> Text("Login Failed: ${state.message}", color = Color.Red)
                 LoginState.Idle -> {}
+                LoginState.Loading -> {} // shimmer already shown in place of button
             }
         }
     }
@@ -317,3 +335,5 @@ fun LoginScreen(
         }
     }
 }
+
+
